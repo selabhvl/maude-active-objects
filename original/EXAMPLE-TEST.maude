@@ -1,0 +1,100 @@
+
+
+mod EXAMPLE-TEST is
+  ex ACTIVE-OBJECTS-SEMANTICS .
+  
+ 
+      ops Hos1 Exp1 Sur1 : -> Oid .
+      ops Main this : -> Oid .
+      ops HOSPITAL EXPERT SURGEON : -> Oid .
+
+  ops SS S  : -> Statement .
+  op e : -> Oid .
+
+  ops examinePatient registerPatient call : -> MethodName [ctor] .
+  ops x : -> LocalVar [ctor] .
+  ops f1 f2 f3 f4 f5 : -> FutureOid [ctor] .
+  op counter : -> Oid .
+  op LV : -> LocalVar .
+    op y : -> LocalVar [ctor] .
+  
+  op pl : -> ParamList [ctor] .
+  eq pl = x y .
+  
+  
+  ops R1 R2 R3 R4 : -> Int .
+  eq R1 = 1 .
+  eq R2 = 11 .
+  eq R3 = 111 .
+  eq R4 = 1111 .
+  ops sig1  sig2 sig3 sig4 methBod1 methBod2 methBod3 methBod4 meth1 meth2 meth3 meth4 : -> Oid .
+  op duA : -> Args .
+  eq duA = (three, four) .
+    op three : -> Value .
+    op four : -> Value .
+  
+  ops ffut  : -> Oid .
+op LVL : -> LocalVarList .
+op V : -> ValueOption .
+eq V = someInt(1) .
+op St : -> FutureState .
+eq St = unresolved .
+
+ op objTest2 : -> Configuration .
+ eq objTest2 = 
+--- < f5 : Future | value : V, state : St  >
+ < f4 : Future | value : V, state : St  >
+ < f3 : Future | value : V, state : St  >
+  < counter : COUNTER | count : 1 >
+
+ < f2 : Future | value : V, state : St  >
+ < f1 : Future | value : someInt(0), state : unresolved  >
+  < Hos1 : OBJECT |  id : HOSPITAL, fields : 10, proc : 
+ { f1 | 
+   ( f1 = Hos1 ! meth1(duA) ) 
+ ; ( f2 = Exp1 ! meth2(duA) after f1 ) 
+ ; ( f3 = Sur1 ! meth3(duA) after f2 ) 
+ ; ( f4 = Hos1 ! meth4(duA) after f3 ) 
+ ---; ( f5 = Hospital ! meth3(duA) after f4 )
+  ; eos }, suspended : emptyPool >
+ 
+ < Exp1 : OBJECT | id : EXPERT, fields : 101, proc : idle, suspended : emptyPool >
+ < Sur1 : OBJECT | id : SURGEON, fields : 1000, proc : idle, suspended : emptyPool >
+ < sig1 : SIGNATURE | ret : R1, name : registerPatient, params : pl > 
+ < methBod1 : METHODBODY | locals : x, stmt : suspend  ; return(R1) ; meos > 
+ < meth1 : METHOD | sig : sig1, body : methBod1 > 
+
+
+  < sig2 : SIGNATURE | ret : R2, name : call, params : pl > 
+  < methBod2 : METHODBODY | locals : x, stmt : suspend  ; return(R2) ; meos > 
+  < meth2 : METHOD | sig : sig2, body : methBod2 > 
+  
+  
+  < sig3 : SIGNATURE | ret : R3, name : call, params : pl > 
+  < methBod3 : METHODBODY | locals : x, stmt : suspend ; suspend ; return(R3) ; meos > 
+  < meth3 : METHOD | sig : sig3, body : methBod3 > 
+  
+  < sig4 : SIGNATURE | ret : R4, name : call, params : pl > 
+  < methBod4 : METHODBODY | locals : x, stmt : suspend  ; return(R4) ; meos > 
+  < meth4 : METHOD | sig : sig4, body : methBod4 > 
+  
+  
+  
+ --- < Main : OBJECT |  id : Main, fields : 30, proc : 
+ --- { LV | ( < f2 : Future | value : someInt(1), state : unresolved > = Hospital ! receivePatient(duA) after 
+ --- < f1 : Future |  
+ --- > ) ; S }, suspended : emptyPool >
+ --- < Hospital : OBJECT | id : Hospital, fields : 0, proc : idle, suspended : emptyPool >
+
+ .
+
+  
+  
+
+endm
+---set trace on .
+---
+---set show stat  .
+---rew [1000] in EXAMPLE-TEST : objTest2 .
+
+

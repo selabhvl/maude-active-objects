@@ -1,0 +1,77 @@
+omod ACTIVE-OBJ-RESOURCE-TEST is
+  protecting NAT .    
+  protecting INT .    
+  protecting QID .    
+  protecting STRING .  
+   ex ACTIVE-OBJ-RESOURCE .    --- your base semantics
+ops 
+
+
+  
+    ops f1 sig1  : -> FutureOid [ctor] .
+    op duA : -> Args .
+  eq duA = (three, four) .
+   op three : -> Value .
+    op four : -> Value .
+    ops R  : -> Int .
+    eq R = 10 .
+    op pl : -> ParamList [ctor] .
+  eq pl = x y .
+    ops  registerPatient : -> MethodName [ctor] .
+    ops x : -> LocalVar [ctor] .
+  
+ops testO r1 r2 r3 r4 m1Body m1 resourcePool counter timespan meth1 f1 sig1 : -> Oid [ctor] .
+  op init : -> Configuration .
+  eq init =
+    < r1 : RESOURCE     | id : r1, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available >
+    < r2 : RESOURCE     | id : r2, type  : "Nurse", attrs : emptyAttrs, state : available >
+   
+    
+   
+    
+    < testO : OBJECT    | id    : testO,
+                           fields : 10,
+                           proc  : { f1 | ( f1 = testO ! m1(duA) ) 
+ ---; ( f5 = Hospital ! meth3(duA) after f4 )
+  ; eos },
+                           suspended : emptyPool
+    >
+    < resourcePool : RESOURCE-POOL |
+        pool     :    < r1 : RESOURCE     | id : r1, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available >
+  				   :  < r2 : RESOURCE     | id : r2, type  : "Nurse", attrs : emptyAttrs, state : available >,
+        requests : nilReq
+    >
+     < m1 : METHODD      | sig      : sig1,    body : m1Body,
+                           Rcost    : 25,    Tcost : 25,
+                           requires : needs("Doctor", 1, (years(5) ; shift("day"))) 
+                                          
+                                     
+    >
+    < counter : COUNTER | count : 1 >
+    < timespan : TIMESPAN | ts : 1 > 
+    
+    < f1 : Future | value : someInt(1), state : unresolved  >
+  
+   < m1Body : METHODBODY | stmt : suspend ; return(R) ; suspend > 
+    < sig1 : SIGNATURE | ret : R, name : registerPatient, params : pl > 
+    
+    ---< r3 : RESOURCE     | id : r3, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available >
+   --- < r4 : RESOURCE     | id : r4, type  : "Nurse", attrs : emptyAttrs, state : available >
+   
+    .
+
+endom
+
+
+
+
+
+---set trace on .
+---
+---set show stats on  .
+rew [1000] in ACTIVE-OBJ-RESOURCE-TEST : init .
+
+
+
+---{f2 ; f2 ; (f1 := fut(1)) ; (f2 := fut(2)) | eos}
+---{destiny ; x ; (destiny :== fut(2)) ; (y :== four) ; (x :== three) | suspend3 ; return(11) ; eos}

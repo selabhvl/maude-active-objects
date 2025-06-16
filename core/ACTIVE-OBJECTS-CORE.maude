@@ -1,0 +1,270 @@
+omod ACTIVE-OBJECTS-CORE is
+  protecting NAT .
+  protecting INT .
+  protecting QID .
+  protecting BOOL .
+  inc CONFIGURATION .
+
+
+
+
+
+
+ 
+
+
+
+
+  vars V : ValueOption .
+  vars FL : FutureList .
+  vars St : FutureState .
+
+  sort FutureList .
+  op nil : -> FutureList .
+  op _::_ : Object FutureList -> FutureList [ctor] .
+  op _::_ : FutureOid FutureList -> FutureList [ctor] .
+
+  op isResolvedF : Object -> Bool .
+  eq isResolvedF(< O : Future | value : V, state : resolved >) = true .
+  eq isResolvedF(< O : Future | value : V, state : unresolved >) = false .
+
+
+  op allResolvedList : FutureList -> Bool .
+  eq allResolvedList(nil) = true .
+  eq allResolvedList(< O : Future | value : V, state : St > :: FL) =
+       if isResolvedF(< O : Future | value : V, state : St >)
+       then allResolvedList(FL)
+       else false
+       fi .
+
+
+
+  sorts Destiny LocalVarList Expr LocalVar Statement Value ValueOption Fields 
+  ProcessPool ProcessState MethodName Args FutureOid .
+  subsort Oid < Qid .
+  subsort Oid < Expr .
+  subsort ValueOption < Statement .
+  subsort Destiny < FutureOid .
+  subsort FutureOid < LocalVar .
+
+
+
+  subsort FutureOid < Oid .
+  
+  subsort ProcessState < ProcessPool .
+  ops emptyPool emptyPoolZ : -> ProcessPool .
+  op _;_ : ProcessPool ProcessPool -> ProcessPool [assoc id: emptyPool] .
+  
+
+  ops idle : -> ProcessState .
+  op { _ | _ } : LocalVarList Statement -> ProcessState [ctor] .
+
+  class OBJECT | id : Oid, fields : Int, proc : ProcessState, suspended : ProcessPool .
+  class METHODBODY | locals : LocalVarList, stmt : Statement .
+  class CLASS | name : Oid .
+  class Future | value : ValueOption, state : FutureState .
+  class SIGNATURE | ret : Int, name : MethodName, params : ParamList .
+  class METHOD | sig : Oid, body : Oid .  
+  class COUNTER | count : Int .
+
+
+  subsort LocalVar < LocalVarList .
+  op emptyVarList : -> LocalVarList [ctor] .
+  op _;_ : LocalVarList LocalVarList -> LocalVarList [assoc comm id: emptyVarList] .
+
+  
+  ---op _= _!_(_) : Object Expr Oid Args -> Statement [ctor] .
+   --- op _= _!_(_)after_ : LocalVar Expr Oid Args Oid -> Statement [ctor] .
+---op _= _._(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  ---op _= _!_(_)after_ : Object Expr Oid Args Object -> Statement [ctor] .
+  op _= _!_(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _!_(_)after_ : Expr Expr Oid Args LocalVar -> Statement [ctor] .
+  op _= _._(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _._(_)after_ : Expr Expr Oid Args LocalVar -> Statement [ctor] .
+  op _= get(_) : LocalVar Oid -> Statement [ctor] .
+  op return : Int -> Statement [ctor] .
+
+  op suspend : -> Statement [ctor] .
+  op suspend3 : -> Statement [ctor] .
+  op skip : -> Statement [ctor] .
+  ops eos meos : -> Statement [ctor] .
+  op cont : FutureOid -> Statement [ctor] .
+
+  sort Type .
+  ops bool string int real : -> Type .
+  sort ParamList .
+  subsort LocalVar < ParamList .
+  op emptyParams : -> ParamList [ctor] .
+  op __ : LocalVar LocalVar -> ParamList [id: emptyParams] .
+
+  sort TypeSet .
+  subsort Type < TypeSet .
+  op none : -> TypeSet .
+  op __ : TypeSet TypeSet -> TypeSet [assoc comm id: none] .
+
+  op await : Bool -> Statement [ctor] .
+  op nilStmt : -> Statement [ctor] .  
+  op _;_ : Statement Statement -> Statement [ctor assoc] .
+ 
+  
+
+  op someBool : -> ValueOption .
+op FPrime : -> Oid .
+op FPPrime : -> Oid .
+op Ffresh : -> FutureOid .
+ op futureTest : -> Configuration .
+  eq futureTest = < FPrime : Future | value : someBool, state : unresolved > .
+sort FutureState .
+ops unresolved resolved : -> FutureState .
+
+ops someBool : Bool -> ValueOption .  
+ops someInt  : Int  -> ValueOption .  
+ops someString : String -> ValueOption .
+
+
+
+
+
+    	
+    	
+   op fresh : -> FutureOid [ctor] .
+   op destiny : -> Destiny .
+
+  op _,_ : Value Value -> Args [ctor] .
+  op none : -> Args [ctor] .
+
+   op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
+   op refresh : FutureOid  -> Msg [ctor] .
+    
+
+  op getFutObject : FutureOid LocalVarList -> Object .
+    op _= _ : Qid Object -> LocalVar .
+  
+  
+  eq getFutObject(F, ('F = < F : Future | value : V, state : FSs >) ; LL)
+  = < F : Future | value : V, state : FSs > .
+   
+  
+  ceq getFutObject(F, (L = < L : Future | value : V, state : FSs >) ; LL) = getFutObject(F, LL)
+  if F =/= L .
+
+  eq getFutObject(F, emptyVarList) = noneFuture .
+    op noneFuture : -> Object [ctor] .
+    
+    
+    
+  op this : -> Oid . 
+  var PL : ParamList .
+  
+  op _:==_ : LocalVar Value -> LocalVar [ctor] .
+            
+   op bindParams : ParamList Args FutureOid -> LocalVarList .
+   eq bindParams(P1 P2, (V1, V2), FF1) = ( P1 :== V1 ) ; ( P2 :== V2 ) ; ( destiny :== FF1 ) .
+   
+   op bind : Oid FutureOid Object Object Args Oid -> ProcessState .
+   eq bind(O, FF1, < MBOD : METHODBODY | locals : XX, stmt : SS >, 
+   < SIG : SIGNATURE | ret : AA, name : MethdodN, params : PL >, A, Cid) = 
+   { destiny ; XX ; bindParams(PL, A, FF1) | SS } .
+ 
+   op bindQ : ProcessPool ProcessState -> ProcessPool .
+   eq bindQ(Q, { LVL | S }) = if Q == emptyPool then { LVL | S } else if containsReturn(S) then { LVL | S } ; Q else  Q ; { LVL | S } fi fi .
+  
+  
+  op fupdate : Object Object -> Object .
+  eq fupdate(< L : Future | value : someInt(I), state : FSs >, < Ffresh : Future | value : someInt(I1), state : FSs1 >) 
+  = < L : Future | value : someInt(I1), state : FSs1 > .
+
+
+
+
+
+  op _|->_ : Object Object -> LocalVar .
+
+
+   op _:=_ : FutureOid FutureOid -> LocalVar .
+   op _:==_ : Destiny FutureOid -> LocalVar .
+ 
+  
+
+op fut : Int -> FutureOid [ctor] .
+op resolveThis : Oid Oid -> Oid .
+eq resolveThis(this, O) = O  .
+eq resolveThis(E, O) = E [owise] .
+
+
+
+
+  vars O MBOD SIG Cid : Oid .
+  vars LL XX LLL LVL Y Rest lv : LocalVarList .
+  vars L X : LocalVar .
+  vars FF1 FF F : FutureOid .
+  vars S SS st S1 S2 : Statement .
+  vars Q QT prp : ProcessPool .
+  vars A : Args .
+  vars P1 P2 : LocalVar .
+  vars V1 V2 : Value .
+  var MethdodN : MethodName .
+  vars I I1 AA : Int .
+  vars E : Expr .   
+  vars FSs FSs1 : FutureState .
+  vars PST : ProcessState .
+ 
+
+
+
+
+ 
+ 
+ 
+ 
+
+
+op containsVar : LocalVar LocalVarList -> Bool .
+eq containsVar(X, Y ; Rest) =  if X =/= Y then containsVar(X, Rest) else true fi .
+ 
+ 
+ 
+
+
+  op selectAndRemove : ProcessPool -> ProcessPool .
+
+  eq selectAndRemove(emptyPool) = emptyPool .
+  eq selectAndRemove({ lv | st } ; prp) = selectAndRemove(prp) .
+  ceq selectAndRemove({ lv | st } ; prp) = { lv | st } ; selectAndRemove(prp) if st == suspend .
+
+
+  op returnValue : -> Int .
+  eq returnValue = 1111 .
+
+  op afterReturnInclusive : Statement -> Statement .
+  eq afterReturnInclusive(return(AA) ; S2) = return(AA) ; S2 .
+  eq afterReturnInclusive(S1 ; S2) = afterReturnInclusive(S2) [owise] .
+  eq afterReturnInclusive(S) = nilStmt [owise] .
+  
+ 
+
+  op getReturn : Statement -> Statement .
+
+
+  eq getReturn(return(AA) ; S) = return(AA) .
+  eq getReturn(S1 ; S2) = getReturn(S2) .
+  eq getReturn(S) = nilStmt [owise] .
+
+
+ 
+ 
+ 
+ 
+op containsReturn : Statement -> Bool .
+
+eq containsReturn(return(I)) = true .
+
+ceq containsReturn(S1 ; S2) = true if containsReturn(S1) and S2 =/= eos .
+ceq containsReturn(S1 ; S2) = true if containsReturn(S2) and S2 =/= eos .
+
+eq containsReturn(S) = false [owise] .
+
+ 
+ 
+endom
+

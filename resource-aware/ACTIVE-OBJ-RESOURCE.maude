@@ -1,0 +1,149 @@
+omod ACTIVE-OBJ-RESOURCE is
+  ex ACTIVE-OBJECTS .    --- your base semantics
+
+ 
+ sort Attr .               
+  sort AttrSet .            
+  subsort Attr < AttrSet .  
+  op emptyAttrs : -> AttrSet .
+  op _;_       : AttrSet AttrSet -> AttrSet [assoc comm id: emptyAttrs] .
+  op years     : Int    -> Attr [ctor] .
+  op shift     : String -> Attr [ctor] .
+
+  --- 2) Resource states
+  sort ResState .
+  ops available reserved inUse unavailable locked : -> ResState [ctor] .
+
+  --- 3) The RESOURCE class
+  class RESOURCE |
+    id    : Oid,
+    type  : String,
+    attrs : AttrSet,
+    state : ResState
+  .
+ 
+ 
+ 
+ 
+  sort Requirement .  
+  sort ResourceProfile .  
+  subsort Requirement < ResourceProfile .  
+  op needs : String Int AttrSet -> Requirement [ctor] .
+  op _and_ : Requirement Requirement -> Requirement [ctor assoc comm] .
+  op alt   : Requirement Requirement -> ResourceProfile      [ctor] .
+
+  class METHODD |
+    sig      : Oid,
+    body     : Oid,
+    Rcost : Int,
+    Tcost : Int,
+    requires : ResourceProfile
+  .
+ sort ResourceSet .
+op emptyResources : -> ResourceSet .
+op _:_ : ResourceSet ResourceSet -> ResourceSet [assoc comm id: emptyResources] .
+ 
+ 
+
+  
+  sorts RequestEntry ReqQueue .      --- one (caller,method,args,future)
+  subsort RequestEntry < ReqQueue .      --- one (caller,method,args,future)
+  op nilReq : -> ReqQueue .
+  op _;_ : ReqQueue ReqQueue -> ReqQueue [assoc id: nilReq] .
+  class RESOURCE-POOL | pool : ResourceSet, requests : ReqQueue .
+  subsort Object < ResourceSet .
+  
+  
+    op reqEntry : Oid Oid Args ResourceProfile Int -> RequestEntry [ctor] .
+  
+
+  
+  
+var PST : ProcessState .
+var lv : LocalVarList .
+var st : Statement .
+var prp QT : ProcessPool .
+
+    	
+  vars P1 P2 : LocalVar .
+  vars V1 V2 : Value .
+  
+  
+  
+vars Mtd RPool O M counter timespan OCid SIG MBOD RP : Oid .
+var Q : ProcessPool .
+vars ReqS       : ResourceProfile .
+var N : Int .
+vars  ResS : ResourceSet .
+vars Rss  : Oid .
+var ReqQ : ReqQueue . 
+var PL : ParamList .
+vars LVL : LocalVarList .
+vars X L : LocalVar .
+vars XYY FOid : FutureOid .
+var A : Args .
+var S SS : Statement .
+var E : Expr .
+vars R1 R2  : ResourceProfile .
+vars RS Rs : Oid .
+vars T : String .
+var K Fld t I : Int .
+vars AA AS2  : AttrSet .
+var ResStt : ResState .
+var RE : RequestEntry .
+vars FSs1 : FutureState .
+
+ 
+  
+rl [Async-Call] :
+< SIG : SIGNATURE | params : PL >
+< MBOD : METHODBODY | stmt : SS > 
+< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  < M : METHODD | sig : SIG, body : MBOD, Rcost : 25, Tcost : 25, requires : R1 >    
+  < O : OBJECT | id : OCid, fields : 10, proc : { LVL | (XYY = E ! M(A)) ; S }, suspended : Q >
+    < counter : COUNTER | count : N >
+    < timespan : TIMESPAN | ts : t >
+  
+  =>
+      < timespan : TIMESPAN | ts : t + 1 >
+  
+  < RP : RESOURCE-POOL | pool : ResS, requests : ReqQ ; reqEntry(O, M, A, R1, t) >
+  < O : OBJECT | id : OCid, fields : 10000, proc : { LVL ; (XYY := fut(N)) | S }, suspended : Q >
+  invoc(E, fut(N), M, A)
+< fut(N) : Future | value : someInt(0), state : unresolved >
+  < counter : COUNTER | count : N + 1 >
+  < SIG : SIGNATURE | params : PL >
+  < MBOD : METHODBODY | stmt : SS >
+ .
+ 
+  rl [Invoc] :
+
+< SIG : SIGNATURE | params : PL >
+< MBOD : METHODBODY | stmt : SS > --- < M : METHOD | sig : SIG, body : MBOD >	
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+ < O : OBJECT | id : OCid, fields : Fld, suspended : Q >
+    invoc(O, fut(N), M, A)  
+  =>  
+  < fut(N) : Future | value : someInt(I), state : unresolved >   
+  < O : OBJECT | id : OCid, fields : 1212 + 1, proc :
+  bind(O, fut(N), < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  A, OCid) >  
+ . 
+    op bind : Oid FutureOid Object Object Args Oid -> ProcessState .
+ 
+    rl [Async-Call-After] :
+ < L : Future | value : someInt(I), state : FSs1 > 
+    < O : OBJECT | id : OCid, fields : Fld, 
+	proc : { LVL | (XYY = E ! M(A)after L) ; S},
+    suspended : Q >
+    =>
+    < O : OBJECT | id : OCid, fields : Fld + 1,
+    proc : {  LVL |
+    if isResolvedF(< L : Future | value : someInt(I), state : FSs1 >)
+	then    ( XYY = E ! M(A) ) ; S 
+	else (suspend3 ;  XYY = E ! M(A)after L) ; S
+    fi},
+ 	suspended : Q >  
+ 	 < L : Future | value : someInt(I), state : FSs1 > 	
+ .
+
+endom

@@ -1,0 +1,208 @@
+omod ACTIVE-OBJECTS-SEMANTICS is
+  protecting NAT .
+  protecting INT .
+  protecting QID .
+  protecting BOOL .
+  inc CONFIGURATION .
+  ex ACTIVE-OBJECTS-CORE .
+
+
+
+
+vars O SIG OCid ECid MBOD M counter ME dummyM : Oid .
+vars E : Expr .
+vars N I I1 Fld Fld1 Ii : Int .
+vars L X : LocalVar .
+var PL : ParamList .
+vars FSs FSs1 : FutureState .
+vars LVL LL : LocalVarList .
+vars XYY : FutureOid .
+vars S S1 stt SS : Statement .
+vars Q Qq : ProcessPool .
+vars A dummyA : Args .
+
+rl [Async-Call] :
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = E ! M(A)) ; S }, suspended : Q >
+  < counter : COUNTER | count : N >
+  =>
+  < O : OBJECT | id : OCid, fields : Fld + 1, 
+    proc : { LVL ; (XYY := fut(N)) | S }, suspended : Q >
+  invoc(E, fut(N), M, A)
+  < counter : COUNTER | count : N + 1 >
+  < fut(N) : Future | value : someInt(0), state : unresolved >
+ .
+ 
+
+ 
+  rl [Invoc] :
+
+  < SIG : SIGNATURE | params : PL > 
+  < MBOD : METHODBODY | locals : X, stmt : SS > 
+  < ME : METHOD | sig : SIG, body : MBOD >	
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+  < O : OBJECT | id : OCid, fields : Fld, suspended : Q >
+    invoc(O, fut(N), dummyM, dummyA)  
+  =>  
+  < fut(N) : Future | value : someInt(I), state : unresolved >   
+  < O : OBJECT | id : OCid, fields : Fld + 1, suspended :
+  bindQ(Q, (bind(O, fut(N), < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  dummyA, OCid)))  >  
+ . 
+
+   rl [Self-Sync-Call] :
+
+  < SIG : SIGNATURE | params : PL > 
+  < MBOD : METHODBODY | locals : X, stmt : SS > 
+  < ME : METHOD | sig : SIG, body : MBOD >	
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = E . M(A)) ; S }, suspended : Q >
+    =>
+  < O : OBJECT | id : OCid, fields : Fld, proc : bind(O, fut(N), < MBOD : METHODBODY |  >, 
+   < SIG : SIGNATURE | >, A, OCid), suspended : Q ; { LVL | (XYY = get(fut(N))) ; S } >
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+     .
+    
+
+   crl [Sync-Call] :
+
+  
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = E . M(A)) ; S }, suspended : Q >
+    =>
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (fut(N) = E ! M(A)) ; (XYY = get(fut(N))) ; S }, suspended : Q >
+  < fut(N) : Future | value : someInt(I), state : unresolved >
+    if O =/= E .
+    
+    
+       crl [Get] :
+
+
+  < fut(N) : Future | value : someInt(I), state : FSs >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = get(fut(N))) ; S }, suspended : Q >
+    =>
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = I) ; S }, suspended : Q >
+  < fut(N) : Future | value : someInt(I), state : FSs >
+    if FSs == resolved .
+    
+           rl [Skip] :
+
+
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | skip ; S }, suspended : Q >
+    =>
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL |  S }, suspended : Q >
+     .
+    
+    
+  op _= _!_(_) : Oid Expr Oid Args -> Statement [ctor] .
+  op _= _._(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _ : LocalVar Int -> Statement [ctor] .
+
+crl [Finish-eos] :
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LL | stt }, suspended : Q >
+  =>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle, suspended : Q ; { LL | stt } >
+if stt == eos .
+
+crl [activate-non-empty] :
+  < E : OBJECT | id : ECid, fields : Fld, proc : idle, suspended : { LVL | S } ; Q >
+  => 
+  < E : OBJECT | id : ECid, fields : Fld + 1, proc : { LVL | S }, suspended : Q  >
+    if containsReturn(S) 
+  
+.
+
+
+    
+    
+ 
+
+
+
+    rl [Return] :
+  < fut(N) : Future | value : someInt(0), state : unresolved > 
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LL ; (destiny :== fut(N)) | S ; return(I) ; stt } >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle  >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+ 
+  < fut(N) : Future | value : someInt(I), state : resolved >
+   refresh(fut(N))
+  .
+
+
+    rl [Return] :
+  < fut(N) : Future | value : someInt(0), state : unresolved > 
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LL ; (destiny :== fut(N)) | S ; return(I) ; stt } >
+  < E : OBJECT | id : ECid, fields : Fld1, suspended : Qq ; { LVL ; (L := fut(N)) | S1  } >
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle  >
+  < E : OBJECT | id : ECid, fields : Fld1, suspended : Qq ; { LVL ; (L := fut(N)) | S1  } > 
+  < fut(N) : Future | value : someInt(I), state : resolved >
+   refresh(fut(N))
+  .
+
+
+
+
+    rl [activate-refreshed-f] : refresh(fut(N))
+  < fut(N) : Future | value : someInt(I), state : resolved > 
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended :  { LVL ; (L := fut(N)) | S1  } ; Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+       < L : Future | value : someInt(Ii), state : unresolved > 
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : { LVL ; (L := fut(N)) | S1  }, suspended :   Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+ 
+  < fut(N) : Future | value : someInt(I), state : resolved >
+            < L : Future | value : someInt(I), state : resolved > 
+  .
+
+
+   rl [Async-Call-After] :
+ < L : Future | value : someInt(I1), state : FSs1 > 
+    < O : OBJECT | id : OCid, fields : Fld, 
+	proc : { LVL | (XYY = E ! dummyM(dummyA)after L) ; S},
+    suspended : Q >
+    =>
+    < O : OBJECT | id : OCid, fields : Fld + 1,
+    proc : {  LVL |
+    if isResolvedF(< L : Future | value : someInt(I1), state : FSs1 >)
+	then    ( XYY = E ! dummyM(dummyA) ) ; S 
+	else (suspend3 ;  XYY = E ! dummyM(dummyA)after L) ; S
+    fi},
+ 	suspended : Q >  
+ 	 < L : Future | value : someInt(I1), state : FSs1 > 	
+ .
+  
+     rl [sync-Call-After] :
+ < L : Future | value : someInt(I1), state : FSs1 > 
+    < O : OBJECT | id : OCid, fields : Fld, 
+	proc : { LVL | (XYY = E . dummyM(dummyA)after L) ; S},
+    suspended : Q >
+    =>
+    < O : OBJECT | id : OCid, fields : Fld + 1,
+    proc : {  LVL |
+    if isResolvedF(< L : Future | value : someInt(I1), state : FSs1 >)
+	then    ( XYY = E ! dummyM(dummyA) ) ; S 
+	else (suspend3 ;  XYY = E . dummyM(dummyA)after L) ; S
+    fi},
+ 	suspended : Q >  
+ 	 < L : Future | value : someInt(I1), state : FSs1 > 	
+ .
+
+
+rl [suspend-priority] :
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | suspend3 ; S }, suspended : Q >  
+  =>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle, suspended : bindQ(Q, { LVL | S })  > .
+
+
+
+
+
+
+
+endom
