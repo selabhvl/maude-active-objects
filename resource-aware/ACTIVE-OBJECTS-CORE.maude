@@ -1,6 +1,5 @@
 
-
-omod ACTIVE-OBJECTS-CORE is
+omod ACTIVE-OBJECTS is
   protecting INT .
   protecting QID .
   protecting BOOL .
@@ -42,32 +41,64 @@ subsort Class < Qid .
   vars St : FutureState .
 
   sort FutureList .
-  op nil : -> FutureList .
-  op _::_ : Object FutureList -> FutureList [ctor] .
-  op _::_ : FutureOid FutureList -> FutureList [ctor] .
+  sort Clause .
+  sort ClauseList .
 
-  op isResolvedF : Object -> Bool .
-  eq isResolvedF(< O : Future | value : V, state : resolved >) = true .
-  eq isResolvedF(< O : Future | value : V, state : unresolved >) = false .
-
-
-  op allResolvedList : FutureList -> Bool .
-  eq allResolvedList(nil) = true .
-  eq allResolvedList(< O : Future | value : V, state : St > :: FL) =
-       if isResolvedF(< O : Future | value : V, state : St >)
-       then allResolvedList(FL)
-       else false
-       fi .
-
-
-
+  subsort ClauseList < Clause .
+  subsort FutureOid < Clause .
+  subsort FutureOid < ClauseList .
+  
+  
+  
+  op [_] : FutureOid -> ClauseList [ctor] .
+  op nilDisj : -> ClauseList [ctor] .   --- empty disjunction (interpreted as false)
+  op nilConj : -> ClauseList [ctor] .   --- empty conjunction (interpreted as true)
+  
+  op _\/_ : ClauseList ClauseList -> ClauseList [ctor assoc comm id: nilDisj] .
+  op _/\_ : ClauseList ClauseList -> ClauseList [ctor assoc comm id: nilConj] .
+  
+  
 
 
+ var FOL : Clause .
+
+vars Ftt Gtt : FutureOid . 
+var C : Configuration .
 
 
+eq allClauseListFutResolved(O, < O : Future | state : resolved > C)     = true .
+eq allClauseListFutResolved(O, < O : Future | state : unresolved > C)   = false .
+ceq allClauseListFutResolved(Ftt, < Gtt : Future | state : unresolved > C) = allClauseListFutResolved(Ftt, C) if Ftt =/= Gtt .
+eq allClauseListFutResolved(Ftt, C) = false [owise] .
+
+eq allClauseListFutResolved(nilDisj, C)     = true .
+eq allClauseListFutResolved(O \/ FOL, C) =
+  if allClauseListFutResolved(O, C)
+  then true
+  else allClauseListFutResolved(FOL, C)
+  fi .
+
+
+op allClauseListFutResolved : Clause Configuration -> Bool .
+eq allClauseListFutResolved(O, < O : Future | state : resolved > C)     = true .
+eq allClauseListFutResolved(O, < O : Future | state : unresolved > C)   = false .
+ceq allClauseListFutResolved(Ftt, < Gtt : Future | state : unresolved > C) = allClauseListFutResolved(Ftt, C) if Ftt =/= Gtt .
+eq allClauseListFutResolved(Ftt, C) = false [owise] .
+
+eq allClauseListFutResolved(nilConj, C)     = true .
+eq allClauseListFutResolved(O /\ FOL, C) =
+  if allClauseListFutResolved(O, C)
+  then allClauseListFutResolved(FOL, C)
+  else false
+  fi .
+
+
+
+  
+  
 
   sorts Destiny LocalVarList after Expr LocalVar Statement Value ValueOption Fields 
-  ProcessPool ProcessState MethodName Args VarSet .
+  ProcessPool ProcessState Args VarSet .
   subsort Oid < Qid .
   subsort Oid < Expr .
   subsort ValueOption < Statement .
@@ -88,7 +119,7 @@ subsort Class < Qid .
   ops idle : -> ProcessState .
   op { _ | _ } : Object Statement -> ProcessState [ctor] .
   op { _ | _ } : LocalVarList Statement -> ProcessState [ctor] .
-op singleVar : LocalVar -> VarSet [ctor] .
+  op singleVar : LocalVar -> VarSet [ctor] .
 
 op emptyVars : -> VarSet [ctor] .
 op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
@@ -103,27 +134,12 @@ op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
   op _;_ : LocalVarList LocalVarList -> LocalVarList [assoc comm id: emptyVarList] .
 
 
-  ---op _= _._(_)after_ : LocalVar Expr MethodName Args Oid -> Statement [ctor] .
-  ---op _= _!_(_)after_ : LocalVar Expr MethodName Args Oid -> Statement [ctor] .
-  ---op _= _!_(_)after_ : LocalVar Expr MethodName Args FutureOid -> Statement [ctor] .
-  ---op _= _!_(_)after_ : Object Expr MethodName Args Object -> Statement [ctor] .
-  ---op _= _._(_)after_ : LocalVar Expr MethodName Args FutureList -> Statement [ctor] .
-  ---op _= _!_(_)after_ : LocalVar Expr MethodName Args FutureList -> Statement [ctor] .
-  ---op _= _._(_) : LocalVar Expr MethodName Args -> Statement [ctor] .
-  ---op _= _!_(_) : LocalVar Expr MethodName Args -> Statement [ctor] .
-  ---op _= _!_(_) : Object Expr MethodName Args -> Statement [ctor] .
-  ---op _= _!_(_) : Oid Expr MethodName Args -> Statement [ctor] .
-  ---op _= _ : LocalVar FutureOid -> Statement [ctor] .
-  
-  
-  
   ---
     op _= _!_(_) : Object Expr Oid Args -> Statement [ctor] .
   op _= _!_(_) : LocalVar Expr Oid Args -> Statement [ctor] .
-  op _= _!_(_)after_ : LocalVar Expr Oid Args LocalVar -> Statement [ctor] .
-  op _= _!_(_)after_ : Expr Expr Oid Args LocalVar -> Statement [ctor] .
-  op _= _!_(_)after_ : Object Expr Oid Args Object -> Statement [ctor] .
-
+  op _= _!_(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
+---  op _= _!_(_)after_ : Expr Expr Oid Args LocalVar -> Statement [ctor] .
+---  op _= _!_(_)after_ : Object Expr Oid Args Object -> Statement [ctor] .
 
   --- Future constructor operator.
   vars F : FutureOid .
@@ -224,16 +240,32 @@ ops someBool : Bool -> ValueOption .
 ops someInt  : Int  -> ValueOption .  
 ops someString : String -> ValueOption .
 
+sorts OidPair DepList .
+
+subsort OidPair < DepList .   --- a single dependency is also a disjunction
+
+--- Pair of (ClassOid, MethodOid)
+op _._ : Oid Oid -> OidPair [ctor] .
+
+--- Disjunction (OR) of method dependencies
+op nilDeps : -> DepList [ctor] .
+op _;_     : DepList DepList -> DepList [assoc id: nilDeps ctor] .
+
+
+
+
+
+
 
 
 class Future | value : ValueOption, state : FutureState .
-class SIGNATURE | ret : Int, name : MethodName, params : ParamList .
-class METHOD | sig : Oid, body : Oid .  
+class SIGNATURE | ret : Int, name : Oid, params : ParamList, depends : DepList, requires : ResourceProfile .
+---class METHOD | sig : Oid, body : Oid .  
 
 
 
   op destiny : -> Destiny .
-  op rr : -> ResourceProfile .
+  ops rr ar : -> ResourceProfile .
   op xx : -> LocalVar [ctor] . 
   op yy : -> LocalVar [ctor] . 
 ops three four : -> Value .
@@ -247,7 +279,6 @@ op none : -> Args [ctor] .
 
 
   
-  var MethdodN : MethodName .
   
   var XX : LocalVarList .
 
@@ -296,7 +327,7 @@ op none : -> Args [ctor] .
  
 
      var OO : Oid .  
-    op invoc : Oid FutureOid Oid Args ResourceProfile -> Msg [ctor] .
+    op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
     op refresh : FutureOid  -> Msg [ctor] .
     
 
@@ -400,7 +431,7 @@ var L1 : LocalVar .
   
   
 class COUNTER | count : Int .
-class TIMESPAN | ts : Int .
+
 
 op fut : Int -> FutureOid [ctor] .
   var counter : Oid .
@@ -442,11 +473,10 @@ var RP : ResourceProfile .
  vars Ffreshed XFfresh : FutureOid .
 
    op bindParams : ParamList Args FutureOid ResourceProfile -> LocalVarList .
-  eq bindParams(P1 P2, (V1, V2), FF1, RP) = ( P1 :== V1 ) ; ( P2 :== V2 ) ; ( destiny :== FF1 ) ; ( rr :== RP ) .
+  eq bindParams(P1 P2, (V1, V2), FF1, RP) = ( P1 :== V1 ) ; ( P2 :== V2 ) ; ( destiny :== FF1 ) ; ( rr :== RP ) ; ( ar :== noneProfile ) .
    
-  op bind : Oid FutureOid Object Object Args Oid ResourceProfile -> ProcessState .
-  eq bind(O, FF1, < MBOD : METHODBODY | stmt : SS >, 
-  < SIG : SIGNATURE | ret : AA, name : MethdodN, params : PL >, A, Cid, RP) = 
+  op bind : Oid FutureOid Object Object Args Oid -> ProcessState .
+  eq bind(O, FF1, < MBOD : METHODBODY | stmt : SS >, < SIG : SIGNATURE | ret : AA, params : PL, requires : RP >, A, Cid) = 
   { destiny ; bindParams(PL, A, FF1, RP) | SS } .
  
 

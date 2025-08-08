@@ -1,0 +1,437 @@
+
+omod ACTIVE-OBJ-RESOURCE is
+  ex ACTIVE-OBJECTS .    --- your base semantics
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  ---op alt   : Requirement Requirement -> ResourceProfile      [ctor] .
+  class METHODD |
+    sig      : Oid,
+    body     : Oid
+  .
+ sort ResourceSet .
+op emptyResources : -> ResourceSet .
+op _:_ : ResourceSet ResourceSet -> ResourceSet [assoc comm id: emptyResources] .
+ 
+ 
+
+  
+  sorts RequestEntry ReqQueue .      --- one (caller,method,args,future)
+  subsort RequestEntry < ReqQueue .      --- one (caller,method,args,future)
+  op nilReq : -> ReqQueue .
+  op _;_ : ReqQueue ReqQueue -> ReqQueue [assoc id: nilReq] .
+  class RESOURCE-POOL | pool : ResourceSet, requests : ReqQueue .
+  subsort Object < ResourceSet .
+  
+  
+    op reqEntry : Oid Oid Args ResourceProfile Int -> RequestEntry [ctor] .
+  
+
+  
+  
+var PST : ProcessState .
+var lv : LocalVarList .
+var st : Statement .
+var prp QT : ProcessPool .
+
+    	
+  vars P1 P2 : LocalVar .
+  vars V1 V2 : Value .
+  
+  
+  
+vars Mtd RPool O M counter OCid ECid SIG MBOD RP : Oid .
+var Q : ProcessPool .
+vars ReqS       : ResourceProfile .
+var N : Int .
+vars  ResS : ResourceSet .
+vars Rss  : Oid .
+var ReqQ : ReqQueue . 
+var PL : ParamList .
+vars LVL : LocalVarList .
+vars X L : LocalVar .
+vars XYY FOid : FutureOid .
+var A : Args .
+var S SS : Statement .
+var E : Expr .
+vars RP1 RP2  : ResourceProfile .
+vars RS Rs : Oid .
+vars T : String .
+var K Fld Fld1 t I : Int .
+vars AA AS2  : AttrSet .
+var ResStt : ResState .
+var RE : RequestEntry .
+vars FSs1 : FutureState .
+
+
+
+  
+  
+
+
+ var B  : Args .
+  
+crl [Async-Call-Require] :
+  < M : METHODD | sig : SIG, body : MBOD >  
+  < SIG : SIGNATURE | params : PL, requires : RP1  >
+  
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | (XYY = E ! M(A)) ; S }, suspended : Q >
+    < counter : COUNTER | count : N >
+  
+  =>  
+  < O : OBJECT | id : OCid, fields : Fld , proc : { LVL ; (XYY := fut(N)) | S }, suspended : Q >
+  invoc(E, fut(N), M, A)
+< fut(N) : Future | value : someInt(0), state : unresolved >
+  < SIG : SIGNATURE | params : PL, requires : RP1  >
+
+  < counter : COUNTER | count : N + 1 >
+    < SIG : SIGNATURE | params : PL, requires : RP1  >
+  
+ if N < 100 .
+ 
+ 
+  rl [Invoc] :
+
+< SIG : SIGNATURE | params : PL >
+< MBOD : METHODBODY | stmt : SS > --- < M : METHOD | sig : SIG, body : MBOD >	
+ < O : OBJECT | id : OCid, fields : Fld, suspended : Q >
+    invoc(O, fut(N), M, A)  
+    
+  =>    
+  < O : OBJECT | id : OCid, fields : Fld , suspended : Q ;
+   (bind(O, fut(N), < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  A, OCid)) >  
+ . 
+ 
+ 
+rl [Finish-eos] :
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | eos }, suspended : Q >
+  =>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle, suspended : Q ; { LVL | eos } > .
+
+ 
+
+
+
+
+
+crl [activate-singleton] :
+	< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== noneProfile ) | S } >
+  => 
+    < RP : RESOURCE-POOL | pool : reserveResources(RP1, ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== selectResources(RP1, ResS)) | S }, suspended : emptyPool  >
+
+    if containsReturn(S) and feasibleProfile(RP1, ResS) 
+    .
+   
+    var allocSet : ResourceProfile .
+   
+   
+   
+crl [activate-non-empty] :
+< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== noneProfile ) | S } ; Q >
+  => 
+< RP : RESOURCE-POOL | pool : reserveResources(RP1, ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== selectResources(RP1, ResS)) | S }, suspended : Q  >
+    if containsReturn(S) and feasibleProfile(RP1, ResS) 
+    .
+
+
+op reserveResources : ResourceProfile ResourceSet -> ResourceSet .
+op reserveResourcesA : ResourceProfile ResourceSet -> ResourceSet .
+op selectResources  : ResourceProfile ResourceSet -> ResourceProfile .
+
+
+eq reserveResources(noneProfile, ResS) = ResS .
+eq selectResources(noneProfile, ResS) = noneProfile .
+
+eq reserveResources(needs(TYP, 0, ATTRS), ResS)  = ResS .
+eq reserveResources(needs(TYP, N, ATTRS), ResS)  = reserveResourcesA(needs(TYP, N, ATTRS), ResS) .
+eq selectResources(needs(TYP, 0, ATTRS), ResS)  = noneProfile .
+
+eq reserveResources(RP1 and RP2, ResS) =
+  reserveResourcesA(RP2, reserveResources(RP1, ResS)) .
+eq selectResources(RP1 and RP2, ResS) = RP1 and RP2 .
+
+ceq reserveResources(RP1 or RP2, ResS) =
+  reserveResourcesA(RP1, ResS)
+  if costProfile(RP1, ResS) < costProfile(RP2, ResS) .
+ceq reserveResources(RP1 or RP2, ResS) =
+  reserveResourcesA(RP2, ResS)
+  if costProfile(RP2, ResS) < costProfile(RP1, ResS) .
+  
+  
+ceq selectResources(RP1 or RP2, ResS) = RP1
+  if costProfile(RP1, ResS) < costProfile(RP2, ResS) .
+ceq selectResources(RP1 or RP2, ResS) = RP2
+  if costProfile(RP1, ResS) > costProfile(RP2, ResS) .
+  
+*** Atomic case — reserve one resource and return exactly that need
+ceq reserveResourcesA(needs(TYP, N, ATTRS),
+    < Rid : RESOURCE | type : TYP, state : available > : ResS)
+  = < Rid : RESOURCE | type : TYP, state : reserved >
+    : reserveResources(needs(TYP, N - 1, ATTRS), ResS)
+  if N > 0 .
+
+
+-----
+
+var ResSt : ResState .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+op requirementReserved : ResourceProfile ResourceSet -> Bool .
+eq requirementReserved(noneProfile, ResS) = true .
+op countReserved : String ResourceSet -> Int .
+eq countReserved(TYP, emptyResources) = 0 .
+eq countReserved(TYP, < Rid : RESOURCE | type : TYP, state : reserved > : ResS) =
+  1 + countReserved(TYP, ResS) .
+eq countReserved(TYP, < Rid : RESOURCE | type : TYP', state : ResStt > : ResS) =
+  countReserved(TYP, ResS) [owise] .
+eq requirementReserved(needs(TYP, N, ATTRS), ResS) =
+  countReserved(TYP, ResS) >= N .
+eq requirementReserved(needs(TYP, I, ATTRS) and needs(TYP', K, ATTRS'), ResS) =
+  requirementReserved(needs(TYP, I, ATTRS), ResS)
+  and
+  requirementReserved(needs(TYP', K, ATTRS'), ResS) .
+
+eq requirementReserved(needs(TYP, I, ATTRS) or needs(TYP', K, ATTRS'), ResS) =
+  requirementReserved(needs(TYP, I, ATTRS), ResS)
+  or
+  requirementReserved(needs(TYP', K, ATTRS'), ResS) .
+
+
+crl [Return] :
+  < fut(N) : Future | value : someInt(0), state : unresolved > 
+  < O : OBJECT | id : OCid, fields : Fld,
+        proc : { LVL ; (destiny :== fut(N)) ; (rr :== RP1) | S ; return(I) ; SS } >
+  < RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle >
+  < RP : RESOURCE-POOL | pool : releaseResources(RP1, ResS), requests : ReqQ >
+  < fut(N) : Future | value : someInt(I), state : resolved >
+  refresh(fut(N))
+if requirementReserved(RP1, ResS) .
+
+    op releaseResources : ResourceProfile ResourceSet -> ResourceSet .
+    *** Base case
+eq releaseResources(noneProfile, ResS) = ResS .
+
+*** Recursively release N matching reserved resources
+ceq releaseResources(needs(TYP, N, ATTRS), < Rid : RESOURCE | type : TYP, state : reserved, id : Rid, attrs : ATTRS, ResCost : C > : ResS)
+  = < Rid : RESOURCE | type : TYP, state : available, id : Rid, attrs : ATTRS, ResCost : C >
+    : releaseResources(needs(TYP, N, ATTRS), ResS)
+if N > 0 .
+
+*** Skip non-matching or already available resources
+ceq releaseResources(needs(TYP, N, ATTRS), < Rid : RESOURCE | type : TYP', state : ResStt, id : Rid, attrs : ATTRS', ResCost : C > : ResS)
+  = < Rid : RESOURCE | type : TYP', state : ResStt, id : Rid, attrs : ATTRS', ResCost : C >
+    : releaseResources(needs(TYP, N, ATTRS), ResS)
+if TYP =/= TYP' or ResStt =/= reserved [owise] .
+    
+    eq releaseResources(RP1 and RP2, ResS) =
+  releaseResources(RP2, releaseResources(RP1, ResS)) .
+
+eq releaseResources(RP1 or RP2, ResS) =
+  if requirementReserved(RP1, ResS)
+  then releaseResources(RP1, ResS)
+  else releaseResources(RP2, ResS) fi .
+    
+    
+    
+    rl [activate-refreshed-f] : 
+    refresh(fut(N))
+  < fut(N) : Future | value : someInt(I), state : resolved > 
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended :  { LVL ; (L := fut(N)) | S  } ; Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+       < L : Future | value : someInt(K), state : unresolved > 
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : { LVL ; (L := fut(N)) | S  }, suspended :   Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+   < fut(N) : Future | value : someInt(I), state : resolved >
+ 
+            < L : Future | value : someInt(I), state : resolved > 
+  .
+  
+  rl [activate-refreshed-f] : 
+    refresh(fut(N))
+  < fut(N) : Future | value : someInt(I), state : resolved > 
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (L := fut(N)) | S  }, suspended : Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+       < L : Future | value : someInt(K), state : unresolved > 
+  
+=>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : { LVL ; (L := fut(N)) | S  }, suspended :   Q >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : idle, suspended : emptyPool >
+ 
+  < fut(N) : Future | value : someInt(I), state : resolved >
+            < L : Future | value : someInt(I), state : resolved > 
+  .
+  
+  
+    
+
+	var FSC : Configuration .
+
+  --- AAAA
+ var LFOid : Clause .
+    rl [Async-Call-After] :
+    FSC
+    < O : OBJECT | id : OCid, fields : Fld, 
+	proc : { LVL | (XYY = E ! M(A)after LFOid) ; S},
+    suspended : Q >
+    =>
+    < O : OBJECT | id : OCid, fields : Fld + 1,
+    proc : {  LVL |
+    if allClauseListFutResolved(LFOid, FSC)
+	then    ( XYY = E ! M(A) ) ; S 
+	else (suspend ;  XYY = E ! M(A)after LFOid) ; S
+    fi},
+ 	suspended : Q >  
+ 	  	FSC
+ .
+
+
+rl [suspend-priority] :
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | suspend ; S }, suspended : Q >  
+  =>
+  < O : OBJECT | id : OCid, fields : Fld + 1, proc : idle, suspended : Q ; { LVL | S }  > .
+
+
+var RC : Int .
+
+	var C : Int .
+	
+op minCost : ResourceSet String AttrSet -> Int .
+eq minCost(emptyResources, TYP, ATTRS) =  1000 .
+eq minCost(
+      < Rid : RESOURCE | type : TYP, attrs  : ATTRS', state : available, ResCost : C > : ResS,
+      TYP, ATTRS
+    )
+  = C
+   .
+eq minCost(
+      < Rid : RESOURCE | > : ResS,
+      TYP, ATTRS
+    )
+  = minCost(ResS, TYP, ATTRS)
+  [owise] .
+  
+op costProfile : ResourceProfile ResourceSet -> Int .
+eq costProfile(needs(TYP, N, ATTRS), ResS) =
+  N * minCost(ResS, TYP, ATTRS) .
+
+eq costProfile(RP1 and RP2, ResS) =
+  costProfile(RP1, ResS) + costProfile(RP2, ResS) .
+--- feasibiliry checks start from here
+op countAvailable : String ResourceSet -> Int .
+op feasibleProfile : ResourceProfile ResourceSet -> Bool .
+
+eq countAvailable(TYP, emptyResources) = 0 .
+
+eq countAvailable(TYP, < Rid : RESOURCE | type : TYP, state : available > : ResS) =
+  1 + countAvailable(TYP, ResS) .
+
+eq countAvailable(TYP, < Rid : RESOURCE | type : TYP', state : ResStt > : ResS) =
+  countAvailable(TYP, ResS) [owise] .
+
+eq feasibleProfile(needs(TYP, N, ATTRS), ResS) =
+  countAvailable(TYP, ResS) >= N .
+
+eq feasibleProfile(needs(TYP, I, ATTRS) and needs(TYP', K, ATTRS'), ResS) =
+  feasibleProfile(needs(TYP, I, ATTRS), ResS)
+  and
+  feasibleProfile(needs(TYP', K, ATTRS'), ResS) .
+
+eq feasibleProfile(needs(TYP, I, ATTRS) or needs(TYP', K, ATTRS'), ResS) =
+  feasibleProfile(needs(TYP, I, ATTRS), ResS)
+  or
+  feasibleProfile(needs(TYP', K, ATTRS'), ResS) .
+
+eq feasibleProfile(noneProfile, ResS) = true .
+
+
+  op reserveN     : ResourceSet ResourceProfile -> ResourceSet .
+ 
+
+	 
+     ---  < RP : RESOURCE-POOL | pool : (< Rid : RESOURCE | id : Rid, type : T, attrs : ATTRS, state : available, ResCost : RC > : ResS), requests : ReqQ >
+
+vars T2            : String .
+    vars A2   : AttrSet .
+    vars TYP  TYP'   Str    : String .
+vars ATTRS ATTRS' A1 AS AR : AttrSet .
+vars Rid  Rid1       : Oid .
+vars REST     : ResourceSet .
+var J : Int .
+
+--- 0 resources left: you can only satisfy a need of zero
+---eq feasibleProfile(needs(TYP, N, ATTRS), emptyResources) = N == 0 .
+
+--- need 0 of anything is always OK
+---eq feasibleProfile(needs(TYP, 0, ATTRS), REST) = true .
+
+--- if the head resource matches, consume one and recur
+
+op includesAttrs : AttrSet AttrSet -> Bool .
+eq includesAttrs(emptyAttrs, AS) = true .
+ceq includesAttrs((A1 ; AR), AS) = true
+  if includesAttr(A1, AS) 
+     and includesAttrs(AR, AS) .
+
+op includesAttr : Attr AttrSet -> Bool .
+ceq includesAttr(years(I), (years(J) ; AS)) = true
+  if J >= I .
+eq  includesAttr(shift(Str), (shift(Str) ; AS)) = true .
+eq  includesAttr(A1, (AR ; AS)) = includesAttr(A1, AS) [owise] .
+eq  includesAttr(A1, emptyAttrs) = false .
+
+
+    op bind : Oid FutureOid Object Object Args Oid -> ProcessState .
+
+
+ 
+ ---< O : OBJECT | id : OCid, fields : Fld + 1, suspended :
+ --- bindQ(Q, (bind(O, fut(N), < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  dummyA, OCid)))  >
+  
+
+endom
+
+  
+  
+ 
+ 
