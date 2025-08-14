@@ -1,10 +1,11 @@
 
+  
 omod ACTIVE-OBJ-RESOURCE-TEST is
   protecting INT .    
   protecting NAT .    
   protecting QID .    
   protecting STRING .  
-   ex ACTIVE-OBJ-RESOURCE .    --- your base semantics
+   ex REACT-SEMANTICS .    
   
   
     ops fregRecord fcardioAssess  fimagingScan   finitiateTreatment   : -> FutureOid [ctor] .
@@ -157,4 +158,3 @@ rew in ACTIVE-OBJ-RESOURCE-TEST : init .
 ---search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>! 
 ---  < finitiateTreatment : Future | value : someInt(v4), state : resolved >
 ---  C:Configuration .
-   

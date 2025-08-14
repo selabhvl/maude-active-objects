@@ -1,6 +1,6 @@
 
-omod ACTIVE-OBJ-RESOURCE is
-  ex ACTIVE-OBJECTS .    --- your base semantics
+omod REACT-SEMANTICS is
+  ex REACT-SYNTAX .    --- your base semantics
 
  
  
@@ -123,41 +123,69 @@ crl [activate-singleton] :
 	< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
   < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== noneProfile ) | S } >
   => 
-    < RP : RESOURCE-POOL | pool : reserveResources(RP1, ResS) , requests : ReqQ >
-  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== selectResources(RP1, ResS)) | S }, suspended : emptyPool  >
+    < RP : RESOURCE-POOL | pool : reserveResources(feasibleProfile(RP1, ResS), ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== feasibleProfile(RP1, ResS)) | S }, suspended : emptyPool  >
 
-    if containsReturn(S) and feasibleProfile(RP1, ResS) 
+    if containsReturn(S) 
     .
    
     var allocSet : ResourceProfile .
    
    
    
-crl [activate-non-empty] :
+crl [activate--1] :
 < RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
   < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== noneProfile ) | S } ; Q >
   => 
-< RP : RESOURCE-POOL | pool : reserveResources(RP1, ResS) , requests : ReqQ >
-  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== selectResources(RP1, ResS)) | S }, suspended : Q  >
-    if containsReturn(S) and feasibleProfile(RP1, ResS) 
+< RP : RESOURCE-POOL | pool : reserveResources(feasibleProfile(RP1, ResS), ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL | S }, suspended : Q  >
+    if containsReturn(S) and RP1 == noneProfile
     .
+
+crl [activate-2] :
+< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== AR1 ) | S } ; Q >
+  => 
+< RP : RESOURCE-POOL | pool : reserveResources(feasibleProfile(RP1, ResS), ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; ( ar :== AR1 ) | S }, suspended : Q  >
+    if containsReturn(S) and AR1 =/= noneProfile
+    .
+    crl [activate-alloc] :
+< RP : RESOURCE-POOL | pool : ResS, requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : idle, suspended : { LVL ; (rr :== RP1) ; ( ar :== noneProfile ) | S } ; Q >
+  => 
+< RP : RESOURCE-POOL | pool : reserveResources(feasibleProfile(RP1, ResS), ResS) , requests : ReqQ >
+  < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== feasibleProfile(RP1, ResS)) | S }, suspended : Q  >
+    if containsReturn(S) and RP1 =/= noneProfile
+    .
+
+var AR1 : ResourceProfile .
+
+
 
 
 op reserveResources : ResourceProfile ResourceSet -> ResourceSet .
 op reserveResourcesA : ResourceProfile ResourceSet -> ResourceSet .
-op selectResources  : ResourceProfile ResourceSet -> ResourceProfile .
+op feasibleProfile  : ResourceProfile ResourceSet -> ResourceProfile .
+
+eq feasibleProfile(noneProfile, ResS) = noneProfile .
+eq feasibleProfile(needs(TYP, 0, ATTRS), ResS)  = noneProfile .
+eq feasibleProfile(RP1 and RP2, ResS) = RP1 and RP2 .
+ceq feasibleProfile(RP1 or RP2, ResS) = RP1
+  if costProfile(RP1, ResS) < costProfile(RP2, ResS) .
+ceq feasibleProfile(RP1 or RP2, ResS) = RP2
+  if costProfile(RP1, ResS) > costProfile(RP2, ResS) .
+
 
 
 eq reserveResources(noneProfile, ResS) = ResS .
-eq selectResources(noneProfile, ResS) = noneProfile .
+
 
 eq reserveResources(needs(TYP, 0, ATTRS), ResS)  = ResS .
 eq reserveResources(needs(TYP, N, ATTRS), ResS)  = reserveResourcesA(needs(TYP, N, ATTRS), ResS) .
-eq selectResources(needs(TYP, 0, ATTRS), ResS)  = noneProfile .
 
 eq reserveResources(RP1 and RP2, ResS) =
   reserveResourcesA(RP2, reserveResources(RP1, ResS)) .
-eq selectResources(RP1 and RP2, ResS) = RP1 and RP2 .
 
 ceq reserveResources(RP1 or RP2, ResS) =
   reserveResourcesA(RP1, ResS)
@@ -167,10 +195,6 @@ ceq reserveResources(RP1 or RP2, ResS) =
   if costProfile(RP2, ResS) < costProfile(RP1, ResS) .
   
   
-ceq selectResources(RP1 or RP2, ResS) = RP1
-  if costProfile(RP1, ResS) < costProfile(RP2, ResS) .
-ceq selectResources(RP1 or RP2, ResS) = RP2
-  if costProfile(RP1, ResS) > costProfile(RP2, ResS) .
   
 *** Atomic case — reserve one resource and return exactly that need
 ceq reserveResourcesA(needs(TYP, N, ATTRS),
@@ -317,7 +341,7 @@ eq releaseResources(RP1 or RP2, ResS) =
     =>
     < O : OBJECT | id : OCid, fields : Fld + 1,
     proc : {  LVL |
-    if allClauseListFutResolved(LFOid, FSC)
+    if clauseSatisfied(LFOid, FSC)
 	then    ( XYY = E ! M(A) ) ; S 
 	else (suspend ;  XYY = E ! M(A)after LFOid) ; S
     fi},
@@ -359,7 +383,6 @@ eq costProfile(RP1 and RP2, ResS) =
   costProfile(RP1, ResS) + costProfile(RP2, ResS) .
 --- feasibiliry checks start from here
 op countAvailable : String ResourceSet -> Int .
-op feasibleProfile : ResourceProfile ResourceSet -> Bool .
 
 eq countAvailable(TYP, emptyResources) = 0 .
 
@@ -369,20 +392,6 @@ eq countAvailable(TYP, < Rid : RESOURCE | type : TYP, state : available > : ResS
 eq countAvailable(TYP, < Rid : RESOURCE | type : TYP', state : ResStt > : ResS) =
   countAvailable(TYP, ResS) [owise] .
 
-eq feasibleProfile(needs(TYP, N, ATTRS), ResS) =
-  countAvailable(TYP, ResS) >= N .
-
-eq feasibleProfile(needs(TYP, I, ATTRS) and needs(TYP', K, ATTRS'), ResS) =
-  feasibleProfile(needs(TYP, I, ATTRS), ResS)
-  and
-  feasibleProfile(needs(TYP', K, ATTRS'), ResS) .
-
-eq feasibleProfile(needs(TYP, I, ATTRS) or needs(TYP', K, ATTRS'), ResS) =
-  feasibleProfile(needs(TYP, I, ATTRS), ResS)
-  or
-  feasibleProfile(needs(TYP', K, ATTRS'), ResS) .
-
-eq feasibleProfile(noneProfile, ResS) = true .
 
 
   op reserveN     : ResourceSet ResourceProfile -> ResourceSet .
@@ -431,7 +440,4 @@ eq  includesAttr(A1, emptyAttrs) = false .
 
 endom
 
-  
-  
- 
  

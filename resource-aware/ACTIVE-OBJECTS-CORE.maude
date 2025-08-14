@@ -1,5 +1,6 @@
 
-omod ACTIVE-OBJECTS is
+
+omod REACT-SYNTAX is
   protecting INT .
   protecting QID .
   protecting BOOL .
@@ -66,29 +67,29 @@ vars Ftt Gtt : FutureOid .
 var C : Configuration .
 
 
-eq allClauseListFutResolved(O, < O : Future | state : resolved > C)     = true .
-eq allClauseListFutResolved(O, < O : Future | state : unresolved > C)   = false .
-ceq allClauseListFutResolved(Ftt, < Gtt : Future | state : unresolved > C) = allClauseListFutResolved(Ftt, C) if Ftt =/= Gtt .
-eq allClauseListFutResolved(Ftt, C) = false [owise] .
+eq clauseSatisfied(O, < O : Future | state : resolved > C)     = true .
+eq clauseSatisfied(O, < O : Future | state : unresolved > C)   = false .
+ceq clauseSatisfied(Ftt, < Gtt : Future | state : unresolved > C) = clauseSatisfied(Ftt, C) if Ftt =/= Gtt .
+eq clauseSatisfied(Ftt, C) = false [owise] .
 
-eq allClauseListFutResolved(nilDisj, C)     = true .
-eq allClauseListFutResolved(O \/ FOL, C) =
-  if allClauseListFutResolved(O, C)
+eq clauseSatisfied(nilDisj, C)     = true .
+eq clauseSatisfied(O \/ FOL, C) =
+  if clauseSatisfied(O, C)
   then true
-  else allClauseListFutResolved(FOL, C)
+  else clauseSatisfied(FOL, C)
   fi .
 
 
-op allClauseListFutResolved : Clause Configuration -> Bool .
-eq allClauseListFutResolved(O, < O : Future | state : resolved > C)     = true .
-eq allClauseListFutResolved(O, < O : Future | state : unresolved > C)   = false .
-ceq allClauseListFutResolved(Ftt, < Gtt : Future | state : unresolved > C) = allClauseListFutResolved(Ftt, C) if Ftt =/= Gtt .
-eq allClauseListFutResolved(Ftt, C) = false [owise] .
+op clauseSatisfied : Clause Configuration -> Bool .
+eq clauseSatisfied(O, < O : Future | state : resolved > C)     = true .
+eq clauseSatisfied(O, < O : Future | state : unresolved > C)   = false .
+ceq clauseSatisfied(Ftt, < Gtt : Future | state : unresolved > C) = clauseSatisfied(Ftt, C) if Ftt =/= Gtt .
+eq clauseSatisfied(Ftt, C) = false [owise] .
 
-eq allClauseListFutResolved(nilConj, C)     = true .
-eq allClauseListFutResolved(O /\ FOL, C) =
-  if allClauseListFutResolved(O, C)
-  then allClauseListFutResolved(FOL, C)
+eq clauseSatisfied(nilConj, C)     = true .
+eq clauseSatisfied(O /\ FOL, C) =
+  if clauseSatisfied(O, C)
+  then clauseSatisfied(FOL, C)
   else false
   fi .
 
