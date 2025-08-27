@@ -1,5 +1,3 @@
-
-  
 omod ACTIVE-OBJ-RESOURCE-TEST is
   protecting INT .    
   protecting NAT .    
@@ -7,124 +5,149 @@ omod ACTIVE-OBJ-RESOURCE-TEST is
   protecting STRING .  
    ex REACT-SEMANTICS .    
   
+  --- Future ids used in the scenario
+  ops fregRecord fcardioAssess fimagingScan finitiateTreatment  xx : -> FutureOid [ctor] .
   
-    ops fregRecord fcardioAssess  fimagingScan   finitiateTreatment   : -> FutureOid [ctor] .
-    op duA : -> Args .
+  
+    --- Simple argument tuple (three, four)
+  op duA : -> Args .
+  op three : -> Value .
+  op four : -> Value .
   eq duA = (three, four) .
-   op three : -> Value .
-    op four : -> Value .
-    ops R1 R2 R3 R4  : -> Int .
-    eq R1 = 1 .     eq R2 = 11 .    eq R3 = 111 .    eq R4 = 1111 .
-    
-    op pl : -> ParamList [ctor] .
+
+  --- Return codes for methods  
+  ops R1 R2 R3 R4  : -> Int .
+  eq R1 = 1 .
+  eq R2 = 11 .
+  eq R3 = 111 .
+  eq R4 = 1111 .
+   
+   ---initial field 
+op initFields : Oid -> Int .
+eq initFields(HOSPITAL)      = 0 .
+eq initFields(CARDIOLOGYUNIT)= 0 .
+eq initFields(RADIOLOGYUNIT) = 0 .
+eq initFields(RUNNER)        = 0 .
+  
+  --- Method parameter list (x y)
+  op pl : -> ParamList [ctor] .
   eq pl = x y .
     ops x : -> LocalVar [ctor] .
 
-ops HOSPITAL CARDIOLOGYUNIT RADIOLOGYUNIT : -> Oid .
+  --- Object ids
+ops RUNNER HOSPITAL CARDIOLOGYUNIT RADIOLOGYUNIT fm : -> Oid .
 ops r1 r2 r3 r4 r5 r6 r7 r8 r9 resourcePool counter : -> Oid [ctor] .
-ops HOSPITAL Hospital bregisterPatient registerPatient meth1  sigregisterPatient : -> Oid [ctor] .
-ops CardiologyUnit bimagingScan imagingScan meth2   sigimagingScan : -> Oid [ctor] .
-ops RadiologyUnit  : -> Oid [ctor] .
-ops  bassessPatient assessPatient      sigstartTreatmentPlan : -> Oid [ctor] .
-ops  bstartTreatmentPlan startTreatmentPlan    initiateTreatment  sigassessPatient : -> Oid [ctor] .
 
+  --- Method/signature/body ids
+ops Hospital 		bregisterPatient 	registerPatient 	sigregisterPatient : -> Oid [ctor] .
+ops CardiologyUnit 	bimagingScan 		imagingScan 		sigimagingScan : -> Oid [ctor] .
+ops RadiologyUnit 	bassessPatient 		assessPatient      	sigstartTreatmentPlan : -> Oid [ctor] .
+ops 				bstartTreatmentPlan startTreatmentPlan 	initiateTreatment sigassessPatient : -> Oid [ctor] .
+
+ops rr : -> ResourceProfile .
+
+
+ops Runner main sigmain bmain : -> Oid [ctor] .
+
+ 
+  --- main configuration
   op init : -> Configuration .
   eq init =
-
+   < Runner   		: OBJECT | id : RUNNER, 		fields : 0, 	proc : idle, suspended : {  (rr :== noneProfile) | (xx = Runner ! main(none)) ; eos } >       
+   < Hospital 		: OBJECT | id : HOSPITAL, 		fields : 0, 	proc : idle, suspended : emptyPool >
+   < CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 0, 	proc : idle, suspended : emptyPool >
+   < RadiologyUnit 	: OBJECT | id : RADIOLOGYUNIT, 	fields : 0, 	proc : idle, suspended : emptyPool >
   
-  < Hospital  : OBJECT | id : HOSPITAL, fields : 10, proc : 
-    { fregRecord | 
-    	( fregRecord = Hospital  ! registerPatient(duA) )
-    ; 	( fcardioAssess  = CardiologyUnit ! assessPatient(duA) after fregRecord ) 
-    ; 	( fimagingScan   = RadiologyUnit !  imagingScan(duA) after fregRecord ) 
-    ; 	( finitiateTreatment  = Hospital  ! startTreatmentPlan(duA) after fcardioAssess \/ fimagingScan  ) 
-    
-    ; eos },
-     suspended : emptyPool >
-  --- op = !()after : LocalVar Expr Oid Args LocalVar -> Statement [ctor] .
-  --- op = !()after : Expr Expr Oid Args LocalVar -> Statement [ctor] .
-  --- op = !()after : Object Expr Oid Args Object -> Statement [ctor] .
-
-     
-       
-   < CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 101, proc : idle, suspended : emptyPool >
-   < RadiologyUnit : OBJECT | id : RADIOLOGYUNIT, fields : 101, proc : idle, suspended : emptyPool >
-  
- 
-    --- Resource Pool Intern Junior Resident Senior Resident Chief of Service
+    --- Resource Pool
     < resourcePool : RESOURCE-POOL |
-        pool :  < r1 : RESOURCE | id : r1, type  : "Intern", attrs : (years(2) ; shift("day")), state : available, ResCost : 10 >
-        	 :  < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : (years(5) ; shift("day")), state : available, ResCost : 12 >
-        	 :  < r5 : RESOURCE | id : r5, type  : "Senior Resident", attrs : (years(10) ; shift("day")), state : available, ResCost : 14 >
-        	 :  < r8 : RESOURCE | id : r8, type  : "Chief of Service", attrs : (years(15) ; shift("day")), state : available, ResCost : 16 >
-  			 : < r2 : RESOURCE     | id : r2, type  : "Junior Nurse", attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
-  			 : < r9 : RESOURCE     | id : r9, type  : "Senior Nurses", attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
-  		     : < r3 : RESOURCE     | id : r3, type  : "Junior Nurse", attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
-  		     : < r6 : RESOURCE     | id : r6, type  : "Senior Nurses", attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
-  		     : < r7 : RESOURCE     | id : r7, type  : "Nurse", attrs : (years(5) ; shift("day")), state : available, ResCost : 30 >
+        pool :  < r1 : RESOURCE 	| id : r1, type  : "Intern", 			attrs : (years(2) ; shift("day")), state : available, ResCost : 10 >
+        	 :  < r4 : RESOURCE 	| id : r4, type  : "Junior Resident", 	attrs : (years(5) ; shift("day")), state : available, ResCost : 12 >
+        	 :  < r5 : RESOURCE 	| id : r5, type  : "Senior Resident", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 14 >
+        	 :  < r8 : RESOURCE 	| id : r8, type  : "Chief of Service", 	attrs : (years(15) ; shift("day")), state : available, ResCost : 16 >
+  			 :  < r2 : RESOURCE     | id : r2, type  : "Junior Nurse", 		attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
+  			 :  < r9 : RESOURCE     | id : r9, type  : "Senior Nurses", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
+  		     :  < r3 : RESOURCE     | id : r3, type  : "Junior Nurse", 		attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
+  		     :  < r6 : RESOURCE     | id : r6, type  : "Senior Nurses", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
+  		     :  < r7 : RESOURCE     | id : r7, type  : "Nurse", 			attrs : (years(5) ; shift("day")), state : available, ResCost : 30 >
   			 
-       , requests : nilReq >
+        >
    
-   --- methods
-   
-   < bregisterPatient : METHODBODY | stmt : suspend3 ; return(R1) ; meos > 
-   < sigregisterPatient : SIGNATURE | ret : R1, name : registerPatient, params : pl,
-                         requires : needs("Intern", 1, (years(2) ; shift("day")))
-                         and needs("Junior Nurse", 1, (years(5) ; shift("day"))) 
-                         > 
-   < registerPatient : METHODD      | sig      : sigregisterPatient,    body : bregisterPatient >
-  
-   < bassessPatient : METHODBODY | stmt : suspend3 ; return(R3) ; meos > 
-   < sigassessPatient : SIGNATURE | ret : R3, name : assessPatient, params : pl, depends : (HOSPITAL . registerPatient),
-                         requires : needs("Senior Resident", 1, (years(10) ; shift("day")))
-                         and needs("Senior Nurses", 1, (years(10) ; shift("day")))
-                          > 
-   < assessPatient : METHODD      | sig      : sigassessPatient,    body : bassessPatient >
-                          
-   < bimagingScan : METHODBODY | stmt : suspend3 ; return(R2) ; meos > 
-   < sigimagingScan : SIGNATURE | ret : R2, name : imagingScan, params : pl, depends : (HOSPITAL . registerPatient),
-                         requires : needs("Junior Resident", 1, (years(5) ; shift("day")))
-                         or needs("Senior Nurses", 1, (years(10) ; shift("day")))
-                          > 
-   < imagingScan : METHODD      | sig      : sigimagingScan,    body : bimagingScan >
- 
+    --- Method bodies and signatures   
+   < bmain : METHODBODY | stmt :
+    ( (fregRecord 			= Hospital  		! registerPatient(duA)) ;
+      (fcardioAssess 		= CardiologyUnit 	! assessPatient(duA) after fregRecord) ;
+      (fimagingScan  		= RadiologyUnit  	! imagingScan(duA)   after fregRecord) ;
+      (finitiateTreatment 	= Hospital 			! startTreatmentPlan(duA)
+                               after (fcardioAssess : fimagingScan)) ;
+      return(R1) ; meos ) >
+   < sigmain 			: SIGNATURE | ret : -1, name : main, params : emptyParams, requires : noneProfile >
+   < main 				: METHODD 		| sig : sigmain, body : bmain >
 
-   < bstartTreatmentPlan : METHODBODY | stmt : suspend3 ; return(R4) ; meos > 
+   < bregisterPatient 	: METHODBODY 	| stmt : suspend3 ; return(R1) ; meos > 
+   < sigregisterPatient : SIGNATURE | ret : R1, name : registerPatient, params : pl,
+                         	requires : needs("Intern", 1, (years(2) ; shift("day")))
+                         	and needs("Junior Nurse", 1, (years(5) ; shift("day")))  >
+   < registerPatient 	: METHODD      | sig      : sigregisterPatient,    body : bregisterPatient >
+  
+   < bassessPatient 	: METHODBODY	| stmt : suspend3 ; return(R2) ; meos > 
+   < sigassessPatient	: SIGNATURE 	| ret : R2, name : assessPatient, params : pl, depends : (HOSPITAL . registerPatient),
+                         	requires : needs("Senior Resident", 1, (years(10) ; shift("day")))
+                         		and needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
+   < assessPatient 	: METHODD      	| sig      : sigassessPatient,    body : bassessPatient >
+                          
+   < bimagingScan 	:		 METHODBODY | stmt : suspend3 ; return(R3) ; meos > 
+   < sigimagingScan : 	SIGNATURE 	| ret : R3, name : imagingScan, params : pl, depends : (HOSPITAL . registerPatient),
+                         	requires : needs("Junior Resident", 1, (years(5) ; shift("day")))
+                        	or needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
+   < imagingScan 	: METHODD      | sig      : sigimagingScan,    body : bimagingScan >
+
+   < bstartTreatmentPlan 	: METHODBODY | stmt : suspend3 ; return(R4) ; meos > 
    < sigstartTreatmentPlan : SIGNATURE | ret : R4, name : startTreatmentPlan, params : pl, depends : (CARDIOLOGYUNIT . assessPatient) ; (RADIOLOGYUNIT . imagingScan),
-                         requires : needs("Intern", 1, (years(2) ; shift("day")))
-                         or needs("Junior Nurse", 2, (years(5) ; shift("day")))
-                          > 
+                         	requires : needs("Intern", 1, (years(2) ; shift("day")))
+                        	or needs("Junior Nurse", 2, (years(5) ; shift("day"))) > 
    < startTreatmentPlan : METHODD      | sig      : sigstartTreatmentPlan,    body : bstartTreatmentPlan >
    
   
-    < counter : COUNTER | count : 1 >
-    
-    < fregRecord : Future | value : someInt(1), state : unresolved  >
-    < fcardioAssess  : Future | value : someInt(1), state : unresolved  >
-    < fimagingScan   : Future | value : someInt(1), state : unresolved  >
-    < finitiateTreatment  : Future | value : someInt(1), state : unresolved  >
+     --- Counters & futures
+    < counter 				: COUNTER | count : 1 >
+    < fregRecord 			: Future | value : someInt(1), state : unresolved  >
+    < fcardioAssess  		: Future | value : someInt(1), state : unresolved  >
+    < fimagingScan   		: Future | value : someInt(1), state : unresolved  >
+    < finitiateTreatment  	: Future | value : someInt(1), state : unresolved  >
   
-    
-    ---< r3 : RESOURCE     | id : r3, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available, ResCost : RC >
-   --- < r4 : RESOURCE     | id : r4, type  : "Nurse", attrs : emptyAttrs, state : available, ResCost : RC >
-   
-   
+    --- Future monitor
+    < fm 					: FUTMON | resolved : noneF >   
      
-.
+  .
 
-var C : Configuration .
+  	--- Pool observer and invariant helper
 
-
-var StateR : FutureState .
-var Rstt : ResState .
-var FR : Oid .
-    vars v1 v2 v3 v4 : Int .
+	var C : Configuration .
+	var StateR : FutureState .
+	var Rstt : ResState .
+	var FR : Oid .
+    vars v1 v2 v3 v4 N : Int .
     vars str sss : String .
     vars  ResS : ResourceSet .
-    var ReqQ : ReqQueue . 
-    
+    var ReqQ : ReqQueue .  
+	vars A    : AttrSet .
+	var  P : ResourceSet .
+ 	vars RF : FutureSet .
+	var _ : ResourceSet .
+	
+	op poolOf : Configuration -> ResourceSet .
+	eq poolOf(< resourcePool : RESOURCE-POOL | pool : P  > C) = P .
+	eq poolOf(C) = emptyResources [owise] .
+
+	op initPool : -> ResourceSet .
+	eq initPool = poolOf(init) .
+
+	op samePool : Configuration -> Bool .
+	eq samePool(C) = if poolOf(C) == initPool then true else false fi  .
     
 endom
+
+
 
 
 ---red in ACTIVE-OBJ-RESOURCE-TEST : reserveN(< r1 : RESOURCE | id : r1, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available, ResCost : RC >
@@ -153,8 +176,41 @@ endom
 ---  < f1 : Future | value : someInt(In1), state : resolved >
 ---  < f4 : Future | value : someInt(In4), state : unresolved >
 ---  C:Configuration .
-rew in ACTIVE-OBJ-RESOURCE-TEST : init .
+---rew in ACTIVE-OBJ-RESOURCE-TEST : init .
 
 ---search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>! 
 ---  < finitiateTreatment : Future | value : someInt(v4), state : resolved >
 ---  C:Configuration .
+---search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>*
+---  < fregRecord : Future | value : someInt(v1), state : resolved >  C:Configuration .
+
+---search [1] in ACTIVE-OBJ-RESOURCE-TEST : init =>* C:Configuration .
+---search [14] in ACTIVE-OBJ-RESOURCE-TEST :
+---  init =>!
+---  < fm : FUTMON    | resolved : RF >
+---  < counter : COUNTER | count : N >
+---  C:Configuration
+---  such that samePool(C) and (RF =/= resloved) and (N > 1) .
+---search in ACTIVE-OBJ-RESOURCE-TEST : init =>! C:Configuration such that not samePool(C) .
+
+---search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
+---  < fregRecord         : Future | value : someInt(v1), state : resolved >
+---  < fcardioAssess      : Future | value : someInt(v2), state : resolved >
+---  < fimagingScan       : Future | value : someInt(v3), state : resolved >
+---  < finitiateTreatment : Future | value : someInt(v4), state : resolved >  C:Configuration .
+
+ ---search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
+ ---  < resourcePool : RESOURCE-POOL
+ ---    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ) >
+ ---  C:Configuration .
+
+---search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>!
+---< fm : FUTMON | resolved : RF >
+---< counter : COUNTER | count : N > C:Configuration
+---such that samePool(C) and (RF =/= noneF) and (N > 1) .
+search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
+  < resourcePool : RESOURCE-POOL
+    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ) >
+  C:Configuration .
+
+---show path 192 .

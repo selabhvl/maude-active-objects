@@ -1,579 +1,158 @@
-
-
 omod REACT-SYNTAX is
   protecting INT .
   protecting QID .
   protecting BOOL .
   protecting STRING .
+  protecting NAT .
 pr CONFIGURATION .
 
 
 
-
- sort Point .
-  op mkPoint : Int Int -> Point .
-
-  sort PointList .
-  op nil : -> PointList .
-  op _._ : Point PointList -> PointList .
-
-  op selectAndRemove : PointList -> PointList .
-
-  var LLLL : PointList .
-  vars XXX, YYYY : Int .  
-
-  eq selectAndRemove(nil) = nil .
-  eq selectAndRemove(mkPoint(4, YYYY) . LLLL) = LLLL .
-  ceq selectAndRemove(mkPoint(XXX, YYYY) . LLLL) = mkPoint(XXX, YYYY) . selectAndRemove(LLLL) if XXX =/= 4 .
 
 
 
  
 
 
+  sorts Destiny LocalVarList after Expr LocalVar Statement Value ValueOption Fields 
+  ProcessPool ProcessState Args VarSet Class FutureList Clause ClauseList FutureOid FutureSet .
 
-sort Class .
-subsort Class < Qid .
+  subsort Class < Qid .
 
-
-
-  vars V : ValueOption .
-  vars FL : FutureList .
-  vars St : FutureState .
-
-  sort FutureList .
-  sort Clause .
-  sort ClauseList .
 
   subsort ClauseList < Clause .
   subsort FutureOid < Clause .
   subsort FutureOid < ClauseList .
-  
-  
-  
-  op [_] : FutureOid -> ClauseList [ctor] .
-  op nilDisj : -> ClauseList [ctor] .   --- empty disjunction (interpreted as false)
-  op nilConj : -> ClauseList [ctor] .   --- empty conjunction (interpreted as true)
-  
-  op _\/_ : ClauseList ClauseList -> ClauseList [ctor assoc comm id: nilDisj] .
-  op _/\_ : ClauseList ClauseList -> ClauseList [ctor assoc comm id: nilConj] .
-  
-  
-
-
- var FOL : Clause .
-
-vars Ftt Gtt : FutureOid . 
-var C : Configuration .
-
-
-eq clauseSatisfied(O, < O : Future | state : resolved > C)     = true .
-eq clauseSatisfied(O, < O : Future | state : unresolved > C)   = false .
-ceq clauseSatisfied(Ftt, < Gtt : Future | state : unresolved > C) = clauseSatisfied(Ftt, C) if Ftt =/= Gtt .
-eq clauseSatisfied(Ftt, C) = false [owise] .
-
-eq clauseSatisfied(nilDisj, C)     = true .
-eq clauseSatisfied(O \/ FOL, C) =
-  if clauseSatisfied(O, C)
-  then true
-  else clauseSatisfied(FOL, C)
-  fi .
-
-
-op clauseSatisfied : Clause Configuration -> Bool .
-eq clauseSatisfied(O, < O : Future | state : resolved > C)     = true .
-eq clauseSatisfied(O, < O : Future | state : unresolved > C)   = false .
-ceq clauseSatisfied(Ftt, < Gtt : Future | state : unresolved > C) = clauseSatisfied(Ftt, C) if Ftt =/= Gtt .
-eq clauseSatisfied(Ftt, C) = false [owise] .
-
-eq clauseSatisfied(nilConj, C)     = true .
-eq clauseSatisfied(O /\ FOL, C) =
-  if clauseSatisfied(O, C)
-  then clauseSatisfied(FOL, C)
-  else false
-  fi .
-
-
-
-  
-  
-
-  sorts Destiny LocalVarList after Expr LocalVar Statement Value ValueOption Fields 
-  ProcessPool ProcessState Args VarSet .
   subsort Oid < Qid .
   subsort Oid < Expr .
   subsort ValueOption < Statement .
   subsort Destiny < FutureOid .
   subsort FutureOid < LocalVar .
-
-
   subsort Value Oid < Expr .
-
-  sorts CalleeOid FutureOid .
-  subsorts CalleeOid FutureOid < Oid .
+  subsorts  FutureOid < Oid .
   subsort ProcessState < ProcessPool .
-  ops emptyPool emptyPoolZ : -> ProcessPool .
-  op _;_ : ProcessPool ProcessPool -> ProcessPool [assoc id: emptyPool] .
-  
+  subsort FutureOid < FutureSet .
 
-  --- Operators for process state
+
+---ProcessState
   ops idle : -> ProcessState .
-  op { _ | _ } : Object Statement -> ProcessState [ctor] .
   op { _ | _ } : LocalVarList Statement -> ProcessState [ctor] .
   op singleVar : LocalVar -> VarSet [ctor] .
 
-op emptyVars : -> VarSet [ctor] .
-op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
 
+---ProcessPool
+  ops emptyPool emptyPoolZ : -> ProcessPool .
+  op _;_ : ProcessPool ProcessPool -> ProcessPool [assoc id: emptyPool] .
+
+---Classes
   class OBJECT | id : Oid, fields : Int, proc : ProcessState, suspended : ProcessPool .
   class METHODBODY | locals : LocalVarList, stmt : Statement .
   class CLASS | name : Oid .
+  class Future | value : ValueOption, state : FutureState .
+  class SIGNATURE | ret : Int, name : Oid, params : ParamList, depends : DepList, requires : ResourceProfile .
+  class COUNTER | count : Int .
+  class RESOURCE | id    : Oid, type  : String, attrs : AttrSet, state : ResState, ResCost : Int .
+  class METHODD | sig      : Oid, body     : Oid .
+  class FUTMON | resolved : FutureSet .
 
+
+
+---LocalVarList
   subsort LocalVar < LocalVarList .
   subsort LocalVar < Int .
   op emptyVarList : -> LocalVarList [ctor] .
   op _;_ : LocalVarList LocalVarList -> LocalVarList [assoc comm id: emptyVarList] .
 
 
-  ---
-    op _= _!_(_) : Object Expr Oid Args -> Statement [ctor] .
-  op _= _!_(_) : LocalVar Expr Oid Args -> Statement [ctor] .
-  op _= _!_(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
----  op _= _!_(_)after_ : Expr Expr Oid Args LocalVar -> Statement [ctor] .
----  op _= _!_(_)after_ : Object Expr Oid Args Object -> Statement [ctor] .
+---VarSet
+  op emptyVars : -> VarSet [ctor] .
+  op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
 
-  --- Future constructor operator.
-  vars F : FutureOid .
-  vars val : Bool .
 
-  op return : Int -> Statement [ctor] .
-
-  --- suspend: suspends the currently running process (moves it into the pending pool).
-  op suspend : -> Statement [ctor] .
-  op suspend3 : -> Statement [ctor] .
-  ops eos meos : -> Statement [ctor] .
-  op cont : FutureOid -> Statement [ctor] .
-
-  sort Type .
-  ops bool string int real : -> Type .
+---ParamLists
   sort ParamList .
   subsort LocalVar < ParamList .
   op emptyParams : -> ParamList [ctor] .
   op __ : LocalVar LocalVar -> ParamList [id: emptyParams] .
 
-  sort TypeSet .
-  subsort Type < TypeSet .
-  op none : -> TypeSet .
-  op __ : TypeSet TypeSet -> TypeSet [assoc comm id: none] .
+ 
 
-  --- Await statement.
-  op await : Bool -> Statement [ctor] .
+---ValueOption
+  ops someBool : Bool -> ValueOption .  
+  ops someInt  : Int  -> ValueOption .  
+  ops someString : String -> ValueOption .
 
-  --- Sequence operator for statements.
-    op nilStmt : -> Statement [ctor] .
-  
+
+---Statements
+
   op _;_ : Statement Statement -> Statement [ctor assoc] .
-
-  vars O  ME SIG   MBOD  : Oid .
-  vars a       : Int .
-  vars L  LVV LP     : LocalVar .
-  vars e       : Expr .
-  vars dummyM  : Oid .
-  vars dummyA  : Args .
-  vars fs      : TypeSet .
-  vars S   SS    : Statement .
-  vars Q       : ProcessPool .
-  vars FS      : FutureState .
-  var FSS       : FutureList .
-  vars P		qq	: ProcessPool .
-  var X  : LocalVar .
-  
-  vars LL LLL  : LocalVarList .
-  vars FF FF1 FFP : FutureOid .
-  vars VV : ValueOption .
-     var PL : ParamList .
-var pp : ProcessState .
-  ---rl [Sync-Call-After] :
-
-  ---  < O : OBJECT | id : O, fields : a,       
-  ---  proc : { L | ( X = e . dummyM(dummyA) after FSS ) ; S },
-  ---  suspended : P >
-  ---  =>
-    
-  ---  < O : OBJECT |  id : O, fields : 1000, 
-  ---  proc : { L | ---suspend3 },
-  ---  	if allResolvedList(FSS) 
-  ---  	then ( X = e . dummyM(dummyA) ) ; S
-  ---  	else  ( suspend3 ; X = e . dummyM(dummyA) after FSS ) ; S
-  ---  	---else (suspend ) ; S 
-  ---  	fi}, 
-  ---  	suspended : P > .
-    	
-
-
-    	
-    	
-    	op fresh : -> FutureOid [ctor] .
-    	
-    		
-
-    	
-    	
-    	
-    	
-    --- { LV | ( x = e . m(duA) ) ; S }
-
-    	  op _:= get(_) : LocalVar Oid -> Statement [ctor] .
-
-  
-  --- The "get" operator to retrieve a future's value (stub)
- --- op get : Oid -> ValueOption [ctor] .
-  op someBool : -> ValueOption .
-op FPrime : -> Oid .
-op FPPrime : -> Oid .
-op Ffresh : -> FutureOid .
- op futureTest : -> Configuration .
-  eq futureTest = < FPrime : Future | value : someBool, state : unresolved > .
-sort FutureState .
-ops unresolved resolved : -> FutureState .
-
-ops someBool : Bool -> ValueOption .  
-ops someInt  : Int  -> ValueOption .  
-ops someString : String -> ValueOption .
-
-sorts OidPair DepList .
-
-subsort OidPair < DepList .   --- a single dependency is also a disjunction
-
---- Pair of (ClassOid, MethodOid)
-op _._ : Oid Oid -> OidPair [ctor] .
-
---- Disjunction (OR) of method dependencies
-op nilDeps : -> DepList [ctor] .
-op _;_     : DepList DepList -> DepList [assoc id: nilDeps ctor] .
-
-
-
-
-
-
-
-
-class Future | value : ValueOption, state : FutureState .
-class SIGNATURE | ret : Int, name : Oid, params : ParamList, depends : DepList, requires : ResourceProfile .
----class METHOD | sig : Oid, body : Oid .  
-
-
-
-  op destiny : -> Destiny .
-  ops rr ar : -> ResourceProfile .
-  op xx : -> LocalVar [ctor] . 
-  op yy : -> LocalVar [ctor] . 
-ops three four : -> Value .
-op _,_ : Value Value -> Args [ctor] .
-op none : -> Args [ctor] .
-   op _:==_ : ResourceProfile ResourceProfile -> LocalVar [ctor] .
-
-
-  var M : Oid .
-  var A : Args .
-
-
-  
-  
-  var XX : LocalVarList .
-
----rl [Self-Sync-Call] :
-
----  < SIG : SIGNATURE | name : dummyM, params : PL > 
----  < MBOD : METHODBODY | locals : X, stmt : SS > 
----  < ME : METHOD | sig : SIG, body : MBOD >
-  
----	< FF : Future | >
- ---   < O : OBJECT | id : O, fields : 4,       
-  ---  proc : { L | ( X = e . dummyM(dummyA) ) ; S },
-  ---  suspended : P >
-  ---  =>
-    
-  ---  < O : OBJECT |  id : O, fields : 2000, 
----	proc : ( bindS(O, FPrime, < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  dummyA, FF ) )  ,
-   --- 	suspended : P ; { L | ( X := get(FPrime) ) ; S } > 
-   --- < FPrime : Future | > .
-    	
-  vars P1 P2 : LocalVar .
-  vars V1 V2 : Value .
-
-  *** Define bindParams which takes a parameter list and an argument tuple.
-
-  
- 
-  rl [Self-Sync-Return] :
-    < O : OBJECT | id : O, fields : 33, proc : { LL | cont(FF) }, suspended : Q ; { LLL | S }  >
-    =>
-    < O : OBJECT | id : O, fields : 3000, proc : { LLL | S }, suspended : Q > .
-    
-    
-    
-    
-     
-  ---rl [Sync-Call] :
-	---< O : OBJECT | id : O, fields : 5,       
-  ---  proc : { L | ( X = e . dummyM(dummyA) ) ; S },
-  ---  suspended : P >    =>
-  ---  < O : OBJECT | id : O, fields : 4000, 
-  ---  proc : { L | ( FPrime = e ! dummyM(dummyA) ) ; ( X := get(FPrime) ) ; S },
-  ---  suspended : P > 
-  ---  < FPrime : Future | > .
-    
- 
-
-     var OO : Oid .  
-    op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
-    op refresh : FutureOid  -> Msg [ctor] .
-    
-
-
-
-  
-  ---  bindS(O, FPrime, < MBOD : METHODBODY | >, < SIG : SIGNATURE | > ,  dummyA, FF )
-  ---  op bindS : Oid FutureOid Object Object Args Oid -> ProcessState .
-  
-  
-  
-     
- var OE : Oid .
-
-
-
- var Fs : Object .
-          
-     vars S3 : Statement .
-
- 
-  
-var I : Int .
-var E : Oid .
-op y : -> LocalVar [ctor] .
-
-
-  
-  
-  
-  
-  
-  
-  op getFutObject : FutureOid LocalVarList -> Object .
-    op _= _ : Qid Object -> LocalVar .
-  
-  
-  eq getFutObject(F, ('F = < F : Future | value : V, state : FSs >) ; LL)
-  = < F : Future | value : V, state : FSs > .
-  
-  
-  
---- Recursive case (not a match)
-ceq getFutObject(F, (L = < L : Future | value : V, state : FSs >) ; LL) = getFutObject(F, LL)
-  if F =/= L .
-
---- Not found
-eq getFutObject(F, emptyVarList) = noneFuture .
-    op noneFuture : -> Object [ctor] .
-  
-  
-  
-    	
-    	var FFF :  Oid .
-    	
-    	    vars XY XYY : FutureOid .
-    	    
-    	    var ii : Int .
-    	vars lvl LVL : LocalVarList .
-    	
-    	
- var Cid : Oid .
-   op _:==_ : LocalVar Value -> LocalVar [ctor] .
-            
-
-  
-  
-  op fupdate : Object Object -> Object .
-  eq fupdate(< L : Future | value : someInt(I), state : FSs >, < Ffresh : Future | value : someInt(I1), state : FSs1 >) 
-  = < L : Future | value : someInt(I1), state : FSs1 > .
-
-
-
-
-
-op _|->_ : Object Object -> LocalVar .
-
-  var I1 : Int .
-  vars FSs FSs1 : FutureState .
-  
-  
-
-   op _:=_ : FutureOid FutureOid -> LocalVar .
-   op _:==_ : Destiny FutureOid -> LocalVar .
- 
-
-  
-var L1 : LocalVar .
-
-  
-  
-  
-  
-  
-  
-  
-  
-   --- op _:= get(_) : LocalVar Oid -> Statement [ctor] .
-   --- op _:=_ : FutureOid FutureOid -> FutureOid .  
-  
-  
-  
-class COUNTER | count : Int .
-
-
-op fut : Int -> FutureOid [ctor] .
-  var counter : Oid .
-  vars N NN : Int .
-  
-    var Qq : ProcessPool .
-  	var CC OCid  CCid ECid clc  lc : Oid . 
-   vars Ii Fld1 Fld2 : Int .
-
-op this : -> Oid . 
-
-op resolveThis : Oid Oid -> Oid .
-eq resolveThis(this, O) = O  .
-eq resolveThis(E, O) = E [owise] .
-
- var Pr : ProcessState .
- op bindQ : ProcessPool ProcessState -> ProcessPool .
----< eq bindQ(Q, { LVL | S }) = if Q == emptyPool then { LVL | S } else if containsReturn(S) then { LVL | S } ; Q else  Q ; { LVL | S } fi fi .
- eq bindQ(Q, { LVL | S }) =  if Q == emptyPool then { LVL | S } else Q fi .
-
-vars Y Rest : LocalVar .
-
-op containsVar : LocalVar LocalVarList -> Bool .
----eq containsVar(X, emptyVarList) = false .
-eq containsVar(X, Y ; Rest) =  if X =/= Y then containsVar(X, Rest) else true fi .
-
-
-
-
-subsort ResourceProfile < LocalVar .
-  
-  var PSQ : ProcessState .
-    
-
-  var Ffch : FutureOid .
-    
-var RP : ResourceProfile .
-
- vars Ffreshed XFfresh : FutureOid .
-
-   op bindParams : ParamList Args FutureOid ResourceProfile -> LocalVarList .
-  eq bindParams(P1 P2, (V1, V2), FF1, RP) = ( P1 :== V1 ) ; ( P2 :== V2 ) ; ( destiny :== FF1 ) ; ( rr :== RP ) ; ( ar :== noneProfile ) .
-   
-  op bind : Oid FutureOid Object Object Args Oid -> ProcessState .
-  eq bind(O, FF1, < MBOD : METHODBODY | stmt : SS >, < SIG : SIGNATURE | ret : AA, params : PL, requires : RP >, A, Cid) = 
-  { destiny ; bindParams(PL, A, FF1, RP) | SS } .
- 
-
-
-
----    op _= _ : Qid Object -> LocalVar .
-
-
- 
-
-   
- var Fld : Int .
- 
-
-  
-  ---op XY := Ffresh : -> Statement .
-  
-  
-  
-  
-  
- var QE : ProcessPool .
- 
-op QC : ProcessPool ProcessState -> ProcessPool .
-eq QC(QT, PST) = QT ; PST .
-
-var PST : ProcessState .
-var lv : LocalVarList .
-var st : Statement .
-var prp QT : ProcessPool .
-
-  op selectAndRemove : ProcessPool -> ProcessPool .
-
-  eq selectAndRemove(emptyPool) = emptyPool .
-  eq selectAndRemove({ lv | st } ; prp) = selectAndRemove(prp) .
-  ceq selectAndRemove({ lv | st } ; prp) = { lv | st } ; selectAndRemove(prp) if st == suspend .
-
-
-  
-vars i : Int .
-
-    
-
-
-
-
-  op returnValue : -> Int .
-  eq returnValue = 1111 .
-
-  op afterReturnInclusive : Statement -> Statement .
-  eq afterReturnInclusive(return(AA) ; S2) = return(AA) ; S2 .
-  eq afterReturnInclusive(S1 ; S2) = afterReturnInclusive(S2) [owise] .
-  eq afterReturnInclusive(S) = nilStmt [owise] .
-  
- 
-
-  op getReturn : Statement -> Statement .
-
-  vars AA : Int .
-  vars S1 S2 : Statement .
-
-  eq getReturn(return(AA) ; S) = return(AA) .
-  eq getReturn(S1 ; S2) = getReturn(S2) .
-  eq getReturn(S) = nilStmt [owise] .
-
-
- 
- 
- 
- 
-op containsReturn : Statement -> Bool .
-
-eq containsReturn(return(I)) = true .
-
-ceq containsReturn(S1 ; S2) = true if containsReturn(S1) and S2 =/= eos .
-ceq containsReturn(S1 ; S2) = true if containsReturn(S2) and S2 =/= eos .
-
-eq containsReturn(S) = false [owise] .
-
-
-
-var stt : Statement .
-
-
-var ST : Statement .
-
-  --- new resources components here
-   sort Requirement .  
+  op _:= get(_) : LocalVar Oid -> Statement [ctor] .
+  op nilStmt : -> Statement [ctor] .
+  op _= _!_(_) : Object Expr Oid Args -> Statement [ctor] .
+  op _= _!_(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _!_(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
+  op _= _!_(_)after_ : LocalVar Expr Oid Args FutureSet -> Statement [ctor] .
+  op _= _._(_) : Object Expr Oid Args -> Statement [ctor] .
+  op _= _._(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _._(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
+  op _= _._(_)after_ : LocalVar Expr Oid Args FutureSet -> Statement [ctor] .
+  op await : Bool -> Statement [ctor] .
+  op suspend : -> Statement [ctor] .
+  op suspend3 : -> Statement [ctor] .
+  ops eos meos : -> Statement [ctor] .
+  op cont : FutureOid -> Statement [ctor] .
+  op return : Int -> Statement [ctor] .
+  op new : Oid -> Expr [ctor] .                 --- expression ‘new C’
+op _=_ : LocalVar Expr -> Statement [ctor] .
+op obj : Int -> Oid [ctor] .
+
+
+---Futures
+  sort FutureState .
+  ops unresolved resolved : -> FutureState .
+  op Ffresh : -> FutureOid .
+  op noneFuture : -> Object [ctor] .
+  op fut : Int -> FutureOid [ctor] .
+  op noneF : -> FutureSet [ctor] .
+  op _:_   : FutureSet FutureSet -> FutureSet [ctor assoc comm id: noneF] .
+  op _in_ : FutureOid FutureSet -> Bool .
+  op _<==_ : FutureSet FutureSet -> Bool .
+
+---Args
+
+  op _,_ : Value Value -> Args [ctor] .
+  op none : -> Args [ctor] .
+
+
+---Messages
+  op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
+   op refresh : FutureOid  -> Msg [ctor] . --- to fix
+
+
+---Resources
+  sort Requirement .  
   sort ResourceProfile .  
   subsort Requirement < ResourceProfile .  
   op needs : String Int AttrSet -> Requirement [ctor] .
   op _and_ : Requirement Requirement -> ResourceProfile [ctor assoc comm] .
   op _or_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm id: noneProfile] .
- --- op _or_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm] .
-    op noneProfile : -> ResourceProfile .
+  op noneProfile : -> ResourceProfile .
+
+
+
+  sort ResourceSet .
+  op emptyResources : -> ResourceSet .
+  op _:_ : ResourceSet ResourceSet -> ResourceSet [assoc comm id: emptyResources] .
+ 
+  sorts RequestEntry ReqQueue .      --- one (caller,method,args,future)
+  subsort RequestEntry < ReqQueue .      --- one (caller,method,args,future)
+  op nilReq : -> ReqQueue .
+  op _;_ : ReqQueue ReqQueue -> ReqQueue [assoc id: nilReq] .
+  class RESOURCE-POOL | pool : ResourceSet .
+  subsort Object < ResourceSet .
   
+  
+---Attrs for Resources  
   sort Attr .               
   sort AttrSet .            
   subsort Attr < AttrSet .  
@@ -582,17 +161,38 @@ var ST : Statement .
   op years     : Int    -> Attr [ctor] .
   op shift     : String -> Attr [ctor] .
 
-  --- 2) Resource states
+---ResourcesState
   sort ResState .
   ops available reserved inUse unavailable locked : -> ResState [ctor] .
+  
+    	
+---Dep
+  sorts OidPair DepList .
+  subsort OidPair < DepList .   
+  op _._ : Oid Oid -> OidPair [ctor] .
+  op nilDeps : -> DepList [ctor] .
+  op _;_     : DepList DepList -> DepList [assoc id: nilDeps ctor] .
 
-  --- 3) The RESOURCE class
-  class RESOURCE |
-    id    : Oid,
-    type  : String,
-    attrs : AttrSet,
-    state : ResState,
-    ResCost : Int
-    
-  .
+   
+---ops
+  op destiny : -> Destiny .
+  ops rr ar : -> ResourceProfile .
+  op xx : -> LocalVar [ctor] . 
+  op yy : -> LocalVar [ctor] . 
+  ops three four : -> Value .
+  op _:==_ : ResourceProfile ResourceProfile -> LocalVar [ctor] .
+  op _:==_ : LocalVar Value -> LocalVar [ctor] .
+  op y : -> LocalVar [ctor] .
+  op _= _ : Qid Object -> LocalVar .
+  op _:=_ : FutureOid FutureOid -> LocalVar .
+  op _:==_ : Destiny FutureOid -> LocalVar .
+
+
+
+var fst : FutureState .
+ var LFOid : Clause .
+  
+ 
+
+
 endom
