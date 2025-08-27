@@ -1,3 +1,4 @@
+
 omod ACTIVE-OBJ-RESOURCE-TEST is
   protecting INT .    
   protecting NAT .    
@@ -23,44 +24,44 @@ omod ACTIVE-OBJ-RESOURCE-TEST is
   eq R4 = 1111 .
    
    ---initial field 
-op initFields : Oid -> Int .
-eq initFields(HOSPITAL)      = 0 .
-eq initFields(CARDIOLOGYUNIT)= 0 .
-eq initFields(RADIOLOGYUNIT) = 0 .
-eq initFields(RUNNER)        = 0 .
+	op initFields : Oid -> Int .
+	eq initFields(HOSPITAL)      = 0 .
+	eq initFields(CARDIOLOGYUNIT)= 0 .
+	eq initFields(RADIOLOGYUNIT) = 0 .
+	eq initFields(RUNNER)        = 0 .
   
-  --- Method parameter list (x y)
-  op pl : -> ParamList [ctor] .
-  eq pl = x y .
+ 	--- Method parameter list (x y)
+  	op pl : -> ParamList [ctor] .
+  	eq pl = x y .
     ops x : -> LocalVar [ctor] .
 
-  --- Object ids
-ops RUNNER HOSPITAL CARDIOLOGYUNIT RADIOLOGYUNIT fm : -> Oid .
-ops r1 r2 r3 r4 r5 r6 r7 r8 r9 resourcePool counter : -> Oid [ctor] .
+  	--- Object ids
+	ops RUNNER HOSPITAL CARDIOLOGYUNIT RADIOLOGYUNIT fm : -> Oid .
+	ops r1 r2 r3 r4 r5 r6 r7 r8 r9 resourcePool counter : -> Oid [ctor] .
 
-  --- Method/signature/body ids
-ops Hospital 		bregisterPatient 	registerPatient 	sigregisterPatient : -> Oid [ctor] .
-ops CardiologyUnit 	bimagingScan 		imagingScan 		sigimagingScan : -> Oid [ctor] .
-ops RadiologyUnit 	bassessPatient 		assessPatient      	sigstartTreatmentPlan : -> Oid [ctor] .
-ops 				bstartTreatmentPlan startTreatmentPlan 	initiateTreatment sigassessPatient : -> Oid [ctor] .
+  	--- Method/signature/body ids
+	ops Hospital 		bregisterPatient 	registerPatient 	sigregisterPatient : -> Oid [ctor] .
+	ops CardiologyUnit 	bimagingScan 		imagingScan 		sigimagingScan : -> Oid [ctor] .
+	ops RadiologyUnit 	bassessPatient 		assessPatient      	sigstartTreatmentPlan : -> Oid [ctor] .
+	ops 				bstartTreatmentPlan startTreatmentPlan 	initiateTreatment sigassessPatient : -> Oid [ctor] .
 
-ops rr : -> ResourceProfile .
+	ops rr : -> ResourceProfile .
 
 
-ops Runner main sigmain bmain : -> Oid [ctor] .
+	ops Runner main sigmain bmain : -> Oid [ctor] .
 
  
   --- main configuration
-  op init : -> Configuration .
-  eq init =
-   < Runner   		: OBJECT | id : RUNNER, 		fields : 0, 	proc : idle, suspended : {  (rr :== noneProfile) | (xx = Runner ! main(none)) ; eos } >       
-   < Hospital 		: OBJECT | id : HOSPITAL, 		fields : 0, 	proc : idle, suspended : emptyPool >
-   < CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 0, 	proc : idle, suspended : emptyPool >
-   < RadiologyUnit 	: OBJECT | id : RADIOLOGYUNIT, 	fields : 0, 	proc : idle, suspended : emptyPool >
+  	op init : -> Configuration .
+  	eq init =
+   		< Runner   		: OBJECT | id : RUNNER, 		fields : 0, 	proc : idle, suspended : {  (rr :== noneProfile) | (xx = Runner ! main(none)) ; eos } >       
+   		< Hospital 		: OBJECT | id : HOSPITAL, 		fields : 0, 	proc : idle, suspended : emptyPool >
+   		< CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 0, 	proc : idle, suspended : emptyPool >
+   		< RadiologyUnit 	: OBJECT | id : RADIOLOGYUNIT, 	fields : 0, 	proc : idle, suspended : emptyPool >
   
-    --- Resource Pool
-    < resourcePool : RESOURCE-POOL |
-        pool :  < r1 : RESOURCE 	| id : r1, type  : "Intern", 			attrs : (years(2) ; shift("day")), state : available, ResCost : 10 >
+ 	   --- Resource Pool
+    	< resourcePool : RESOURCE-POOL |
+        	pool :  < r1 : RESOURCE 	| id : r1, type  : "Intern", 			attrs : (years(2) ; shift("day")), state : available, ResCost : 10 >
         	 :  < r4 : RESOURCE 	| id : r4, type  : "Junior Resident", 	attrs : (years(5) ; shift("day")), state : available, ResCost : 12 >
         	 :  < r5 : RESOURCE 	| id : r5, type  : "Senior Resident", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 14 >
         	 :  < r8 : RESOURCE 	| id : r8, type  : "Chief of Service", 	attrs : (years(15) ; shift("day")), state : available, ResCost : 16 >
@@ -73,39 +74,39 @@ ops Runner main sigmain bmain : -> Oid [ctor] .
         >
    
     --- Method bodies and signatures   
-   < bmain : METHODBODY | stmt :
-    ( (fregRecord 			= Hospital  		! registerPatient(duA)) ;
-      (fcardioAssess 		= CardiologyUnit 	! assessPatient(duA) after fregRecord) ;
-      (fimagingScan  		= RadiologyUnit  	! imagingScan(duA)   after fregRecord) ;
-      (finitiateTreatment 	= Hospital 			! startTreatmentPlan(duA)
-                               after (fcardioAssess : fimagingScan)) ;
-      return(R1) ; meos ) >
-   < sigmain 			: SIGNATURE | ret : -1, name : main, params : emptyParams, requires : noneProfile >
-   < main 				: METHODD 		| sig : sigmain, body : bmain >
+  	 	< bmain : METHODBODY | stmt :
+    		( (fregRecord 			= Hospital  		! registerPatient(duA)) ;
+      		(fcardioAssess 		= CardiologyUnit 	! assessPatient(duA) after fregRecord) ;
+      		(fimagingScan  		= RadiologyUnit  	! imagingScan(duA)   after fregRecord) ;
+      		(finitiateTreatment 	= Hospital 			! startTreatmentPlan(duA)
+                               after (fcardioAssess /\ fimagingScan)) ;
+      		return(R1) ; meos ) >
+   		< sigmain 			: SIGNATURE | ret : -1, name : main, params : emptyParams, requires : noneProfile >
+   		< main 				: METHOD 		| sig : sigmain, body : bmain >
 
-   < bregisterPatient 	: METHODBODY 	| stmt : suspend3 ; return(R1) ; meos > 
-   < sigregisterPatient : SIGNATURE | ret : R1, name : registerPatient, params : pl,
+   		< bregisterPatient 	: METHODBODY 	| stmt : suspend3 ; return(R1) ; meos > 
+   		< sigregisterPatient : SIGNATURE | ret : R1, name : registerPatient, params : pl,
                          	requires : needs("Intern", 1, (years(2) ; shift("day")))
                          	and needs("Junior Nurse", 1, (years(5) ; shift("day")))  >
-   < registerPatient 	: METHODD      | sig      : sigregisterPatient,    body : bregisterPatient >
+   		< registerPatient 	: METHOD      | sig      : sigregisterPatient,    body : bregisterPatient >
   
-   < bassessPatient 	: METHODBODY	| stmt : suspend3 ; return(R2) ; meos > 
-   < sigassessPatient	: SIGNATURE 	| ret : R2, name : assessPatient, params : pl, depends : (HOSPITAL . registerPatient),
+ 		< bassessPatient 	: METHODBODY	| stmt : suspend3 ; return(R2) ; meos > 
+   		< sigassessPatient	: SIGNATURE 	| ret : R2, name : assessPatient, params : pl, depends : (HOSPITAL . registerPatient),
                          	requires : needs("Senior Resident", 1, (years(10) ; shift("day")))
                          		and needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
-   < assessPatient 	: METHODD      	| sig      : sigassessPatient,    body : bassessPatient >
+   		< assessPatient 	: METHOD      	| sig      : sigassessPatient,    body : bassessPatient >
                           
-   < bimagingScan 	:		 METHODBODY | stmt : suspend3 ; return(R3) ; meos > 
-   < sigimagingScan : 	SIGNATURE 	| ret : R3, name : imagingScan, params : pl, depends : (HOSPITAL . registerPatient),
+   		< bimagingScan 	:		 METHODBODY | stmt : suspend3 ; return(R3) ; meos > 
+   		< sigimagingScan : 	SIGNATURE 	| ret : R3, name : imagingScan, params : pl, depends : (HOSPITAL . registerPatient),
                          	requires : needs("Junior Resident", 1, (years(5) ; shift("day")))
                         	or needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
-   < imagingScan 	: METHODD      | sig      : sigimagingScan,    body : bimagingScan >
+   		< imagingScan 	: METHOD      | sig      : sigimagingScan,    body : bimagingScan >
 
-   < bstartTreatmentPlan 	: METHODBODY | stmt : suspend3 ; return(R4) ; meos > 
-   < sigstartTreatmentPlan : SIGNATURE | ret : R4, name : startTreatmentPlan, params : pl, depends : (CARDIOLOGYUNIT . assessPatient) ; (RADIOLOGYUNIT . imagingScan),
+   		< bstartTreatmentPlan 	: METHODBODY | stmt : suspend3 ; return(R4) ; meos > 
+   		< sigstartTreatmentPlan : SIGNATURE | ret : R4, name : startTreatmentPlan, params : pl, depends : (CARDIOLOGYUNIT . assessPatient) ; (RADIOLOGYUNIT . imagingScan),
                          	requires : needs("Intern", 1, (years(2) ; shift("day")))
                         	or needs("Junior Nurse", 2, (years(5) ; shift("day"))) > 
-   < startTreatmentPlan : METHODD      | sig      : sigstartTreatmentPlan,    body : bstartTreatmentPlan >
+   		< startTreatmentPlan : METHOD      | sig      : sigstartTreatmentPlan,    body : bstartTreatmentPlan >
    
   
      --- Counters & futures
@@ -129,7 +130,6 @@ ops Runner main sigmain bmain : -> Oid [ctor] .
     vars v1 v2 v3 v4 N : Int .
     vars str sss : String .
     vars  ResS : ResourceSet .
-    var ReqQ : ReqQueue .  
 	vars A    : AttrSet .
 	var  P : ResourceSet .
  	vars RF : FutureSet .

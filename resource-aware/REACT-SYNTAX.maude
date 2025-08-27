@@ -15,14 +15,12 @@ pr CONFIGURATION .
 
 
   sorts Destiny LocalVarList after Expr LocalVar Statement Value ValueOption Fields 
-  ProcessPool ProcessState Args VarSet Class FutureList Clause ClauseList FutureOid FutureSet .
+  ProcessPool ProcessState Args VarSet Class FutureList Clause FutureOid FutureSet .
 
   subsort Class < Qid .
 
 
-  subsort ClauseList < Clause .
   subsort FutureOid < Clause .
-  subsort FutureOid < ClauseList .
   subsort Oid < Qid .
   subsort Oid < Expr .
   subsort ValueOption < Statement .
@@ -52,7 +50,7 @@ pr CONFIGURATION .
   class SIGNATURE | ret : Int, name : Oid, params : ParamList, depends : DepList, requires : ResourceProfile .
   class COUNTER | count : Int .
   class RESOURCE | id    : Oid, type  : String, attrs : AttrSet, state : ResState, ResCost : Int .
-  class METHODD | sig      : Oid, body     : Oid .
+  class METHOD | sig      : Oid, body     : Oid .
   class FUTMON | resolved : FutureSet .
 
 
@@ -69,7 +67,7 @@ pr CONFIGURATION .
   op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
 
 
----ParamLists
+  ---ParamLists
   sort ParamList .
   subsort LocalVar < ParamList .
   op emptyParams : -> ParamList [ctor] .
@@ -77,13 +75,13 @@ pr CONFIGURATION .
 
  
 
----ValueOption
+  ---ValueOption
   ops someBool : Bool -> ValueOption .  
   ops someInt  : Int  -> ValueOption .  
   ops someString : String -> ValueOption .
 
 
----Statements
+  ---Statements
 
   op _;_ : Statement Statement -> Statement [ctor assoc] .
   op _:= get(_) : LocalVar Oid -> Statement [ctor] .
@@ -103,38 +101,37 @@ pr CONFIGURATION .
   op cont : FutureOid -> Statement [ctor] .
   op return : Int -> Statement [ctor] .
   op new : Oid -> Expr [ctor] .                 --- expression ‘new C’
-op _=_ : LocalVar Expr -> Statement [ctor] .
-op obj : Int -> Oid [ctor] .
+  op _=_ : LocalVar Expr -> Statement [ctor] .
+  op obj : Int -> Oid [ctor] .
 
 
----Futures
+  ---Futures
   sort FutureState .
   ops unresolved resolved : -> FutureState .
   op Ffresh : -> FutureOid .
   op noneFuture : -> Object [ctor] .
   op fut : Int -> FutureOid [ctor] .
   op noneF : -> FutureSet [ctor] .
-  op _:_   : FutureSet FutureSet -> FutureSet [ctor assoc comm id: noneF] .
-  op _in_ : FutureOid FutureSet -> Bool .
-  op _<==_ : FutureSet FutureSet -> Bool .
+  op _/\_   : FutureSet FutureSet -> FutureSet [ctor assoc comm id: noneF] .
+subsort FutureSet < Clause .             --- any conjunction is also a Clause
+op falseC : -> Clause [ctor] .           --- empty disjunction = false
+op _\/_   : Clause Clause -> Clause [ctor assoc comm id: falseC] .
 
----Args
 
+  ---Args
   op _,_ : Value Value -> Args [ctor] .
   op none : -> Args [ctor] .
 
 
----Messages
+  ---Messages
   op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
    op refresh : FutureOid  -> Msg [ctor] . --- to fix
 
 
----Resources
-  sort Requirement .  
+  ---Resources
   sort ResourceProfile .  
-  subsort Requirement < ResourceProfile .  
-  op needs : String Int AttrSet -> Requirement [ctor] .
-  op _and_ : Requirement Requirement -> ResourceProfile [ctor assoc comm] .
+  op needs : String Int AttrSet -> ResourceProfile [ctor] .
+  op _and_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm] .
   op _or_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm id: noneProfile] .
   op noneProfile : -> ResourceProfile .
 
@@ -144,10 +141,6 @@ op obj : Int -> Oid [ctor] .
   op emptyResources : -> ResourceSet .
   op _:_ : ResourceSet ResourceSet -> ResourceSet [assoc comm id: emptyResources] .
  
-  sorts RequestEntry ReqQueue .      --- one (caller,method,args,future)
-  subsort RequestEntry < ReqQueue .      --- one (caller,method,args,future)
-  op nilReq : -> ReqQueue .
-  op _;_ : ReqQueue ReqQueue -> ReqQueue [assoc id: nilReq] .
   class RESOURCE-POOL | pool : ResourceSet .
   subsort Object < ResourceSet .
   
