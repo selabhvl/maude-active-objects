@@ -213,9 +213,8 @@ Check resource release: verify that the Junior Resident (r4) is available in eve
 ```maude
 search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
   < resourcePool : RESOURCE-POOL
-    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ), requests : nilReq >
-  C:Configuration .
-```
+    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ) >
+  C:Configuration .```
 <details> <summary><strong>Click to expand the output:</strong></summary>
 
 ```
