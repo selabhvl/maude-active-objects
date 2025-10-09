@@ -1,216 +1,191 @@
-
-omod ACTIVE-OBJ-RESOURCE-TEST is
-  protecting INT .    
-  protecting NAT .    
-  protecting QID .    
-  protecting STRING .  
-   ex REACT-SEMANTICS .    
-  
-  --- Future ids used in the scenario
-  ops fregRecord fcardioAssess fimagingScan finitiateTreatment  xx : -> FutureOid [ctor] .
-  
-  
-    --- Simple argument tuple (three, four)
-  op duA : -> Args .
-  op three : -> Value .
-  op four : -> Value .
-  eq duA = (three, four) .
-
-  --- Return codes for methods  
-  ops R1 R2 R3 R4  : -> Int .
-  eq R1 = 1 .
-  eq R2 = 11 .
-  eq R3 = 111 .
-  eq R4 = 1111 .
-   
-   ---initial field 
-	op initFields : Oid -> Int .
-	eq initFields(HOSPITAL)      = 0 .
-	eq initFields(CARDIOLOGYUNIT)= 0 .
-	eq initFields(RADIOLOGYUNIT) = 0 .
-	eq initFields(RUNNER)        = 0 .
-  
- 	--- Method parameter list (x y)
-  	op pl : -> ParamList [ctor] .
-  	eq pl = x y .
-    ops x : -> LocalVar [ctor] .
-
-  	--- Object ids
-	ops RUNNER HOSPITAL CARDIOLOGYUNIT RADIOLOGYUNIT fm : -> Oid .
-	ops r1 r2 r3 r4 r5 r6 r7 r8 r9 resourcePool counter : -> Oid [ctor] .
-
-  	--- Method/signature/body ids
-	ops Hospital 		bregisterPatient 	registerPatient 	sigregisterPatient : -> Oid [ctor] .
-	ops CardiologyUnit 	bimagingScan 		imagingScan 		sigimagingScan : -> Oid [ctor] .
-	ops RadiologyUnit 	bassessPatient 		assessPatient      	sigstartTreatmentPlan : -> Oid [ctor] .
-	ops 				bstartTreatmentPlan startTreatmentPlan 	initiateTreatment sigassessPatient : -> Oid [ctor] .
-
-	ops rr : -> ResourceProfile .
+omod REACT-SYNTAX is
+  protecting INT .
+  protecting QID .
+  protecting BOOL .
+  protecting STRING .
+  protecting NAT .
+pr CONFIGURATION .
 
 
-	ops Runner main sigmain bmain : -> Oid [ctor] .
+
+
+
 
  
-  --- main configuration
-  	op init : -> Configuration .
-  	eq init =
-   		< Runner   		: OBJECT | id : RUNNER, 		fields : 0, 	proc : idle, suspended : {  (rr :== noneProfile) | (xx = Runner ! main(none)) ; eos } >       
-   		< Hospital 		: OBJECT | id : HOSPITAL, 		fields : 0, 	proc : idle, suspended : emptyPool >
-   		< CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 0, 	proc : idle, suspended : emptyPool >
-   		< RadiologyUnit 	: OBJECT | id : RADIOLOGYUNIT, 	fields : 0, 	proc : idle, suspended : emptyPool >
+
+
+  sorts Destiny LocalVarList after Expr LocalVar Statement Value ValueOption Fields 
+  ProcessPool ProcessState Args VarSet Class FutureList Clause FutureOid FutureSet .
+
+  subsort Class < Qid .
+
+
+  subsort FutureOid < Clause .
+  subsort Oid < Qid .
+  subsort Oid < Expr .
+  subsort ValueOption < Statement .
+  subsort Destiny < FutureOid .
+  subsort FutureOid < LocalVar .
+  subsort Value Oid < Expr .
+  subsorts  FutureOid < Oid .
+  subsort ProcessState < ProcessPool .
+  subsort FutureOid < FutureSet .
+
+
+---ProcessState
+  ops idle : -> ProcessState .
+  op { _ | _ } : LocalVarList Statement -> ProcessState [ctor] .
+  op singleVar : LocalVar -> VarSet [ctor] .
+
+
+---ProcessPool
+  ops emptyPool emptyPoolZ : -> ProcessPool .
+  op _;_ : ProcessPool ProcessPool -> ProcessPool [assoc id: emptyPool] .
+
+---Classes
+  class OBJECT | id : Oid, fields : Int, proc : ProcessState, suspended : ProcessPool .
+  class METHODBODY | locals : LocalVarList, stmt : Statement .
+  class CLASS | name : Oid .
+  class Future | value : ValueOption, state : FutureState .
+  class SIGNATURE | ret : Int, name : Oid, params : ParamList, depends : DepList, requires : ResourceProfile .
+  class COUNTER | count : Int .
+  class RESOURCE | id    : Oid, type  : String, attrs : AttrSet, state : ResState, ResCost : Int .
+  class METHOD | sig      : Oid, body     : Oid .
+  class FUTMON | resolved : FutureSet .
+
+
+
+---LocalVarList
+  subsort LocalVar < LocalVarList .
+  subsort LocalVar < Int .
+  op emptyVarList : -> LocalVarList [ctor] .
+  op _;_ : LocalVarList LocalVarList -> LocalVarList [assoc comm id: emptyVarList] .
+
+
+---VarSet
+  op emptyVars : -> VarSet [ctor] .
+  op _;_ : VarSet VarSet -> VarSet [assoc id: emptyVars] .
+
+
+  ---ParamLists
+  sort ParamList .
+  subsort LocalVar < ParamList .
+  op emptyParams : -> ParamList [ctor] .
+  op __ : LocalVar LocalVar -> ParamList [id: emptyParams] .
+
+ 
+
+  ---ValueOption
+  ops someBool : Bool -> ValueOption .  
+  ops someInt  : Int  -> ValueOption .  
+  ops someString : String -> ValueOption .
+
+
+  ---Statements
+
+  op _;_ : Statement Statement -> Statement [ctor assoc] .
+  op _:= get(_) : LocalVar Oid -> Statement [ctor] .
+  op nilStmt : -> Statement [ctor] .
+  op _= _!_(_) : Object Expr Oid Args -> Statement [ctor] .
+  op _= _!_(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _!_(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
+  op _= _!_(_)after_ : LocalVar Expr Oid Args FutureSet -> Statement [ctor] .
+  op _= _._(_) : Object Expr Oid Args -> Statement [ctor] .
+  op _= _._(_) : LocalVar Expr Oid Args -> Statement [ctor] .
+  op _= _._(_)after_ : LocalVar Expr Oid Args Clause -> Statement [ctor] .
+  op _= _._(_)after_ : LocalVar Expr Oid Args FutureSet -> Statement [ctor] .
+  op await : Bool -> Statement [ctor] .
+  op suspend : -> Statement [ctor] .
+  op suspend3 : -> Statement [ctor] .
+  ops eos meos : -> Statement [ctor] .
+  op cont : FutureOid -> Statement [ctor] .
+  op return : Int -> Statement [ctor] .
+  op new : Oid -> Expr [ctor] .                 --- expression ‘new C’
+  op _=_ : LocalVar Expr -> Statement [ctor] .
+  op obj : Int -> Oid [ctor] .
+
+
+  ---Futures
+  sort FutureState .
+  ops unresolved resolved : -> FutureState .
+  op Ffresh : -> FutureOid .
+  op noneFuture : -> Object [ctor] .
+  op fut : Int -> FutureOid [ctor] .
+  op noneF : -> FutureSet [ctor] .
+  op _/\_   : FutureSet FutureSet -> FutureSet [ctor assoc comm id: noneF] .
+subsort FutureSet < Clause .             --- any conjunction is also a Clause
+op falseC : -> Clause [ctor] .           --- empty disjunction = false
+op _\/_   : Clause Clause -> Clause [ctor assoc comm id: falseC] .
+
+
+  ---Args
+  op _,_ : Value Value -> Args [ctor] .
+  op none : -> Args [ctor] .
+
+
+  ---Messages
+  op invoc : Oid FutureOid Oid Args -> Msg [ctor] .
+   op refresh : FutureOid  -> Msg [ctor] . --- to fix
+
+
+  ---Resources
+  sort ResourceProfile .  
+  op needs : String Int AttrSet -> ResourceProfile [ctor] .
+  op _and_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm] .
+  op _or_ : ResourceProfile ResourceProfile -> ResourceProfile [ctor assoc comm id: noneProfile] .
+  op noneProfile : -> ResourceProfile .
+
+
+
+  sort ResourceSet .
+  op emptyResources : -> ResourceSet .
+  op _:_ : ResourceSet ResourceSet -> ResourceSet [assoc comm id: emptyResources] .
+ 
+  class RESOURCE-POOL | pool : ResourceSet .
+  subsort Object < ResourceSet .
   
- 	   --- Resource Pool
-    	< resourcePool : RESOURCE-POOL |
-        	pool :  < r1 : RESOURCE 	| id : r1, type  : "Intern", 			attrs : (years(2) ; shift("day")), state : available, ResCost : 10 >
-        	 :  < r4 : RESOURCE 	| id : r4, type  : "Junior Resident", 	attrs : (years(5) ; shift("day")), state : available, ResCost : 12 >
-        	 :  < r5 : RESOURCE 	| id : r5, type  : "Senior Resident", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 14 >
-        	 :  < r8 : RESOURCE 	| id : r8, type  : "Chief of Service", 	attrs : (years(15) ; shift("day")), state : available, ResCost : 16 >
-  			 :  < r2 : RESOURCE     | id : r2, type  : "Junior Nurse", 		attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
-  			 :  < r9 : RESOURCE     | id : r9, type  : "Senior Nurses", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
-  		     :  < r3 : RESOURCE     | id : r3, type  : "Junior Nurse", 		attrs : (years(5) ; shift("day")), state : available, ResCost : 20 >
-  		     :  < r6 : RESOURCE     | id : r6, type  : "Senior Nurses", 	attrs : (years(10) ; shift("day")), state : available, ResCost : 24 >
-  		     :  < r7 : RESOURCE     | id : r7, type  : "Nurse", 			attrs : (years(5) ; shift("day")), state : available, ResCost : 30 >
-  			 
-        >
+  
+---Attrs for Resources  
+  sort Attr .               
+  sort AttrSet .            
+  subsort Attr < AttrSet .  
+  op emptyAttrs : -> AttrSet .
+  op _;_       : AttrSet AttrSet -> AttrSet [assoc comm id: emptyAttrs] .
+  op years     : Int    -> Attr [ctor] .
+  op shift     : String -> Attr [ctor] .
+
+---ResourcesState
+  sort ResState .
+  ops available reserved inUse unavailable locked : -> ResState [ctor] .
+  
+    	
+---Dep
+  sorts OidPair DepList .
+  subsort OidPair < DepList .   
+  op _._ : Oid Oid -> OidPair [ctor] .
+  op nilDeps : -> DepList [ctor] .
+  op _;_     : DepList DepList -> DepList [assoc id: nilDeps ctor] .
+
    
-    --- Method bodies and signatures   
-  	 	< bmain : METHODBODY | stmt :
-    		( (fregRecord 			= Hospital  		! registerPatient(duA)) ;
-      		(fcardioAssess 		= CardiologyUnit 	! assessPatient(duA) after fregRecord) ;
-      		(fimagingScan  		= RadiologyUnit  	! imagingScan(duA)   after fregRecord) ;
-      		(finitiateTreatment 	= Hospital 			! startTreatmentPlan(duA)
-                               after (fcardioAssess /\ fimagingScan)) ;
-      		return(R1) ; meos ) >
-   		< sigmain 			: SIGNATURE | ret : -1, name : main, params : emptyParams, requires : noneProfile >
-   		< main 				: METHOD 		| sig : sigmain, body : bmain >
+---ops
+  op destiny : -> Destiny .
+  ops rr ar : -> ResourceProfile .
+  op xx : -> LocalVar [ctor] . 
+  op yy : -> LocalVar [ctor] . 
+  ops three four : -> Value .
+  op _:==_ : ResourceProfile ResourceProfile -> LocalVar [ctor] .
+  op _:==_ : LocalVar Value -> LocalVar [ctor] .
+  op y : -> LocalVar [ctor] .
+  op _= _ : Qid Object -> LocalVar .
+  op _:=_ : FutureOid FutureOid -> LocalVar .
+  op _:==_ : Destiny FutureOid -> LocalVar .
 
-   		< bregisterPatient 	: METHODBODY 	| stmt : suspend3 ; return(R1) ; meos > 
-   		< sigregisterPatient : SIGNATURE | ret : R1, name : registerPatient, params : pl,
-                         	requires : needs("Intern", 1, (years(2) ; shift("day")))
-                         	and needs("Junior Nurse", 1, (years(5) ; shift("day")))  >
-   		< registerPatient 	: METHOD      | sig      : sigregisterPatient,    body : bregisterPatient >
+
+
+var fst : FutureState .
+ var LFOid : Clause .
   
- 		< bassessPatient 	: METHODBODY	| stmt : suspend3 ; return(R2) ; meos > 
-   		< sigassessPatient	: SIGNATURE 	| ret : R2, name : assessPatient, params : pl, depends : (HOSPITAL . registerPatient),
-                         	requires : needs("Senior Resident", 1, (years(10) ; shift("day")))
-                         		and needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
-   		< assessPatient 	: METHOD      	| sig      : sigassessPatient,    body : bassessPatient >
-                          
-   		< bimagingScan 	:		 METHODBODY | stmt : suspend3 ; return(R3) ; meos > 
-   		< sigimagingScan : 	SIGNATURE 	| ret : R3, name : imagingScan, params : pl, depends : (HOSPITAL . registerPatient),
-                         	requires : needs("Junior Resident", 1, (years(5) ; shift("day")))
-                        	or needs("Senior Nurses", 1, (years(10) ; shift("day"))) > 
-   		< imagingScan 	: METHOD      | sig      : sigimagingScan,    body : bimagingScan >
+ 
 
-   		< bstartTreatmentPlan 	: METHODBODY | stmt : suspend3 ; return(R4) ; meos > 
-   		< sigstartTreatmentPlan : SIGNATURE | ret : R4, name : startTreatmentPlan, params : pl, depends : (CARDIOLOGYUNIT . assessPatient) ; (RADIOLOGYUNIT . imagingScan),
-                         	requires : needs("Intern", 1, (years(2) ; shift("day")))
-                        	or needs("Junior Nurse", 2, (years(5) ; shift("day"))) > 
-   		< startTreatmentPlan : METHOD      | sig      : sigstartTreatmentPlan,    body : bstartTreatmentPlan >
-   
-  
-     --- Counters & futures
-    < counter 				: COUNTER | count : 1 >
-    < fregRecord 			: Future | value : someInt(1), state : unresolved  >
-    < fcardioAssess  		: Future | value : someInt(1), state : unresolved  >
-    < fimagingScan   		: Future | value : someInt(1), state : unresolved  >
-    < finitiateTreatment  	: Future | value : someInt(1), state : unresolved  >
-  
-    --- Future monitor
-    < fm 					: FUTMON | resolved : noneF >   
-     
-  .
 
-  	--- Pool observer and invariant helper
-
-	var C : Configuration .
-	var StateR : FutureState .
-	var Rstt : ResState .
-	var FR : Oid .
-    vars v1 v2 v3 v4 N : Int .
-    vars str sss : String .
-    vars  ResS : ResourceSet .
-	vars A    : AttrSet .
-	var  P : ResourceSet .
- 	vars RF : FutureSet .
-	var _ : ResourceSet .
-	
-	op poolOf : Configuration -> ResourceSet .
-	eq poolOf(< resourcePool : RESOURCE-POOL | pool : P  > C) = P .
-	eq poolOf(C) = emptyResources [owise] .
-
-	op initPool : -> ResourceSet .
-	eq initPool = poolOf(init) .
-
-	op samePool : Configuration -> Bool .
-	eq samePool(C) = if poolOf(C) == initPool then true else false fi  .
-    
 endom
-
-
-
-
----red in ACTIVE-OBJ-RESOURCE-TEST : reserveN(< r1 : RESOURCE | id : r1, type  : "Doctor", attrs : (years(5) ; shift("day")), state : available, ResCost : RC >
----        	 :  < r4 : RESOURCE | id : r4, type  : "Docctor", attrs : (years(5) ; shift("day")), state : available, ResCost : RC >, needs("Doctor", 1, (years(5) ; shift("day")))
----                         and needs("Docctor", 1, (years(5) ; shift("day")))) .
-
----reduce in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, <> ~ resolvedd("f1")) . 
-
----reduce in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, resolvedd("f1")) .
-
----set trace on .
----reservd
----set show stats on  .
- ---< r5 : RESOURCE | id : r5, type  : "Chief", attrs : (years(5) ; shift("day")), state : S, ResCost : 120 >
---- working
----red in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, resolvedd(f1)) .
----red in ACTIVE-OBJ-RESOURCE-TEST : init .
----red in ACTIVE-OBJ-RESOURCE-TEST :   modelCheck(init, [] <> ~ same-res("r1", "r2")).
----search [10] init =>! < f2 : Future | value : someInt(In), state : resolved  > C:Configuration .
----red [1] in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, <> (resolvedd(f1)) .
----red in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, <> (resolvedd(f1) \/ resolvedd(f2) \/ resolvedd(f3) \/ resolvedd(f4))) .
----red in ACTIVE-OBJ-RESOURCE-CHECK : modelCheck(init, <> resolvedd(f1)) .
----search [10] init =>!  < f1 : Future | state : resolved > C:Configuration .
----search [1000] in ACTIVE-OBJ-RESOURCE-TEST : init =>! < f3 : Future | value : someInt(In1), state : resolved  > C:Configuration .
----search [1000] in ACTIVE-OBJ-RESOURCE-TEST : init =>! 
----  < f1 : Future | value : someInt(In1), state : resolved >
----  < f4 : Future | value : someInt(In4), state : unresolved >
----  C:Configuration .
----rew in ACTIVE-OBJ-RESOURCE-TEST : init .
-
----search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>! 
----  < finitiateTreatment : Future | value : someInt(v4), state : resolved >
----  C:Configuration .
----search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>*
----  < fregRecord : Future | value : someInt(v1), state : resolved >  C:Configuration .
-
----search [1] in ACTIVE-OBJ-RESOURCE-TEST : init =>* C:Configuration .
----search [14] in ACTIVE-OBJ-RESOURCE-TEST :
----  init =>!
----  < fm : FUTMON    | resolved : RF >
----  < counter : COUNTER | count : N >
----  C:Configuration
----  such that samePool(C) and (RF =/= resloved) and (N > 1) .
----search in ACTIVE-OBJ-RESOURCE-TEST : init =>! C:Configuration such that not samePool(C) .
-
----search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
----  < fregRecord         : Future | value : someInt(v1), state : resolved >
----  < fcardioAssess      : Future | value : someInt(v2), state : resolved >
----  < fimagingScan       : Future | value : someInt(v3), state : resolved >
----  < finitiateTreatment : Future | value : someInt(v4), state : resolved >  C:Configuration .
-
- ---search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
- ---  < resourcePool : RESOURCE-POOL
- ---    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ) >
- ---  C:Configuration .
-
----search [10] in ACTIVE-OBJ-RESOURCE-TEST : init =>!
----< fm : FUTMON | resolved : RF >
----< counter : COUNTER | count : N > C:Configuration
----such that samePool(C) and (RF =/= noneF) and (N > 1) .
-search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
-  < resourcePool : RESOURCE-POOL
-    | pool : ( < r4 : RESOURCE | id : r4, type  : "Junior Resident", attrs : A , state : available, ResCost : 12 > : _ ) >
-  C:Configuration .
-
----show path 192 .

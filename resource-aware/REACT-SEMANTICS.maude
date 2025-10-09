@@ -16,10 +16,10 @@ omod REACT-SEMANTICS is
   vars FSet FSett RF : FutureSet .
 
   --- Numbers
-  vars Fld I K N AA Ci J : Int .
+  vars Fld Fld1 I K N AA Ci J : Int .
 
   --- Locals / local-var lists
-  var  LVL : LocalVarList .
+  vars  LVL LVL1 : LocalVarList .
   vars P1 P2 : LocalVar .
 
   --- Statements
@@ -170,16 +170,18 @@ crl [activate-alloc] :
   < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (rr :== RP1) ; (ar :== feasibleProfile(RP1, ResS)) | S }, suspended : Q  >
   if RP1 =/= noneProfile .
 
-  
+  var Sr : Statement .
 crl [Return] :
   < fut(N) : Future | value : someInt(0), state : unresolved > 
   < O : OBJECT | id : OCid, fields : Fld, proc : { LVL ; (destiny :== fut(N)) ; (rr :== RP1) | S ; return(I) ; SS } >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : { LVL1 ; (L := fut(N)) | Sr }, suspended : Q >
   < RP : RESOURCE-POOL | pool : ResS  >
   < L : Future | value : someInt(K), state : unresolved >
   < futmon : FUTMON | resolved : RF >
   =>
   < fut(N) : Future | value : someInt(I), state : resolved >
   < O : OBJECT | id : OCid, fields : Fld, proc : idle >
+  < E : OBJECT | id : ECid, fields : Fld1, proc : { LVL1 ; (L := fut(N)) | Sr }, suspended : Q >
   < RP : RESOURCE-POOL | pool : releaseResources(RP1, ResS)  >
   < L : Future | value : someInt(I), state : resolved >
   < futmon : FUTMON | resolved : L /\ RF >
