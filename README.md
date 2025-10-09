@@ -78,40 +78,49 @@ rew in ACTIVE-OBJ-RESOURCE-TEST : init .
 	     Copyright 1997-2024 SRI International
 		   Tue Aug 19 13:49:45 2025
 
-Maude> 
 Maude> Maude> Maude> rewrite in ACTIVE-OBJ-RESOURCE-TEST : init .
-rewrites: 484 in 0ms cpu (1ms real) (598269 rewrites/second)
+rewrites: 512 in 1ms cpu (1ms real) (487155 rewrites/second)
 result Configuration: < fregRecord : Future | value : someInt(1), state :
-    resolved > < fcardioAssess : Future | value : someInt(111), state :
-    resolved > < fimagingScan : Future | value : someInt(11), state : resolved
-    > < finitiateTreatment : Future | value : someInt(1111), state : resolved >
-    < fm : FUTMON | resolved : (fregRecord : fcardioAssess : fimagingScan :
-    finitiateTreatment) > < resourcePool : RESOURCE-POOL | pool : (< r1 :
-    RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift("day")),
-    state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2, type :
+    resolved > < fcardioAssess : Future | value : someInt(11), state : resolved
+    > < fimagingScan : Future | value : someInt(1111), state : resolved > <
+    finitiateTreatment : Future | value : someInt(11111), state : resolved > <
+    fbloodTest : Future | value : someInt(111), state : resolved > < fm :
+    FUTMON | resolved : (fregRecord /\ fcardioAssess /\ fimagingScan /\
+    finitiateTreatment /\ fbloodTest) > < resourcePool : RESOURCE-POOL | pool :
+    (< r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift(
+    "day")), state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2,
+    type : "Junior Nurse", attrs : (years(5) ; shift("day")), state :
+    available, ResCost : 20 > : < r3 : RESOURCE | id : r3, type :
     "Junior Nurse", attrs : (years(5) ; shift("day")), state : available,
-    ResCost : 20 > : < r3 : RESOURCE | id : r3, type : "Junior Nurse", attrs :
-    (years(5) ; shift("day")), state : available, ResCost : 20 > : < r4 :
-    RESOURCE | id : r4, type : "Junior Resident", attrs : (years(5) ; shift(
-    "day")), state : available, ResCost : 12 > : < r5 : RESOURCE | id : r5,
-    type : "Senior Resident", attrs : (years(10) ; shift("day")), state :
-    available, ResCost : 14 > : < r6 : RESOURCE | id : r6, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 > : < r7 : RESOURCE | id : r7, type : "Nurse", attrs : (years(
-    5) ; shift("day")), state : available, ResCost : 30 > : < r8 : RESOURCE |
-    id : r8, type : "Chief of Service", attrs : (years(15) ; shift("day")),
-    state : available, ResCost : 16 > : < r9 : RESOURCE | id : r9, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 >), requests : nilReq > < counter : COUNTER | count : 5 > <
-    Hospital : OBJECT | id : HOSPITAL, fields : 23, proc : idle, suspended : {
-    fregRecord ; (fregRecord := fut(1)) ; (fcardioAssess := fut(2)) ; (
-    fimagingScan := fut(3)) ; (finitiateTreatment := fut(4)) | eos} > <
-    CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 102, proc : idle,
-    suspended : emptyPool > < RadiologyUnit : OBJECT | id : RADIOLOGYUNIT,
-    fields : 102, proc : idle, suspended : emptyPool > < fut(1) : Future |
-    value : someInt(1), state : resolved > < fut(2) : Future | value : someInt(
-    111), state : resolved > < fut(3) : Future | value : someInt(11), state :
-    resolved > < fut(4) : Future | value : someInt(1111), state : resolved >
+    ResCost : 20 > : < r4 : RESOURCE | id : r4, type : "Junior Resident", attrs
+    : (years(5) ; shift("day")), state : available, ResCost : 12 > : < r5 :
+    RESOURCE | id : r5, type : "Senior Resident", attrs : (years(10) ; shift(
+    "day")), state : available, ResCost : 14 > : < r6 : RESOURCE | id : r6,
+    type : "Senior Nurses", attrs : (years(10) ; shift("day")), state :
+    available, ResCost : 24 > : < r7 : RESOURCE | id : r7, type : "Nurse",
+    attrs : (years(5) ; shift("day")), state : available, ResCost : 30 > : < r8
+    : RESOURCE | id : r8, type : "Chief of Service", attrs : (years(15) ;
+    shift("day")), state : available, ResCost : 16 > : < r9 : RESOURCE | id :
+    r9, type : "Senior Nurses", attrs : (years(10) ; shift("day")), state :
+    available, ResCost : 24 > : < r10 : RESOURCE | id : r10, type :
+    "LabTechnecian", attrs : (years(5) ; shift("day")), state : available,
+    ResCost : 30 > : < r11 : RESOURCE | id : r11, type : "Inter", attrs : (
+    years(2) ; shift("day")), state : available, ResCost : 30 >) > < counter :
+    COUNTER | count : 7 > < Hospital : OBJECT | id : HOSPITAL, fields : 0, proc
+    : idle, suspended : emptyPool > < CardiologyUnit : OBJECT | id :
+    CARDIOLOGYUNIT, fields : 0, proc : idle, suspended : emptyPool > <
+    RadiologyUnit : OBJECT | id : RADIOLOGYUNIT, fields : 0, proc : idle,
+    suspended : emptyPool > < LaboratoryUnit : OBJECT | id : LABORATORYUNIT,
+    fields : 0, proc : idle, suspended : emptyPool > < Runner : OBJECT | id :
+    RUNNER, fields : 0, proc : {destiny ; (ar :== noneProfile) ; (destiny :==
+    fut(1)) ; (fregRecord := fut(2)) ; (fcardioAssess := fut(3)) ; (
+    fimagingScan := fut(5)) ; (finitiateTreatment := fut(6)) ; (fbloodTest :=
+    fut(4)) | return(1) ; meos}, suspended : {xx := fut(1) | eos} > < fut(1) :
+    Future | value : someInt(0), state : unresolved > < fut(2) : Future | value
+    : someInt(1), state : resolved > < fut(3) : Future | value : someInt(11),
+    state : resolved > < fut(4) : Future | value : someInt(111), state :
+    resolved > < fut(5) : Future | value : someInt(1111), state : resolved > <
+    fut(6) : Future | value : someInt(11111), state : resolved >
 
 Maude> 
 ```
@@ -126,79 +135,64 @@ search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
   < fregRecord         : Future | value : someInt(v1), state : resolved >
   < fcardioAssess      : Future | value : someInt(v2), state : resolved >
   < fimagingScan       : Future | value : someInt(v3), state : resolved >
-  < finitiateTreatment : Future | value : someInt(v4), state : resolved >  C:Configuration .
+  < fbloodTest         : Future | value : someInt(v4), state : resolved >
+  < finitiateTreatment : Future | value : someInt(v5), state : resolved >  C:Configuration .
 ```
 <details> <summary><strong>Click to expand the output:</strong></summary>
 
 ```
 
-Solution 1 (state 145)
-states: 149  rewrites: 6579 in 7ms cpu (8ms real) (858877 rewrites/second)
-C --> < fm : FUTMON | resolved : (fregRecord : fcardioAssess : fimagingScan :
-    finitiateTreatment) > < resourcePool : RESOURCE-POOL | pool : (< r1 :
-    RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift("day")),
-    state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2, type :
-    "Junior Nurse", attrs : (years(5) ; shift("day")), state : available,
-    ResCost : 20 > : < r3 : RESOURCE | id : r3, type : "Junior Nurse", attrs :
-    (years(5) ; shift("day")), state : available, ResCost : 20 > : < r4 :
-    RESOURCE | id : r4, type : "Junior Resident", attrs : (years(5) ; shift(
-    "day")), state : available, ResCost : 12 > : < r5 : RESOURCE | id : r5,
-    type : "Senior Resident", attrs : (years(10) ; shift("day")), state :
-    available, ResCost : 14 > : < r6 : RESOURCE | id : r6, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 > : < r7 : RESOURCE | id : r7, type : "Nurse", attrs : (years(
-    5) ; shift("day")), state : available, ResCost : 30 > : < r8 : RESOURCE |
-    id : r8, type : "Chief of Service", attrs : (years(15) ; shift("day")),
-    state : available, ResCost : 16 > : < r9 : RESOURCE | id : r9, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 >), requests : nilReq > < counter : COUNTER | count : 5 > <
-    Hospital : OBJECT | id : HOSPITAL, fields : 23, proc : idle, suspended : {
-    fregRecord ; (fregRecord := fut(1)) ; (fcardioAssess := fut(2)) ; (
-    fimagingScan := fut(3)) ; (finitiateTreatment := fut(4)) | eos} > <
-    CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 102, proc : idle,
-    suspended : emptyPool > < RadiologyUnit : OBJECT | id : RADIOLOGYUNIT,
-    fields : 102, proc : idle, suspended : emptyPool > < fut(1) : Future |
-    value : someInt(1), state : resolved > < fut(2) : Future | value : someInt(
-    11), state : resolved > < fut(3) : Future | value : someInt(111), state :
-    resolved > < fut(4) : Future | value : someInt(1111), state : resolved >
-v1 --> 1
-v2 --> 11
-v3 --> 111
-v4 --> 1111
+Maude> Maude> Maude> search in ACTIVE-OBJ-RESOURCE-TEST : init =>! C <
+    fregRecord : Future | value : someInt(v1), state : resolved > <
+    fcardioAssess : Future | value : someInt(v2), state : resolved > <
+    fimagingScan : Future | value : someInt(v3), state : resolved > <
+    finitiateTreatment : Future | value : someInt(v5), state : resolved > <
+    fbloodTest : Future | value : someInt(v4), state : resolved > .
 
-Solution 2 (state 151)
-states: 153  rewrites: 6705 in 8ms cpu (8ms real) (811056 rewrites/second)
-C --> < fm : FUTMON | resolved : (fregRecord : fcardioAssess : fimagingScan :
-    finitiateTreatment) > < resourcePool : RESOURCE-POOL | pool : (< r1 :
-    RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift("day")),
-    state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2, type :
+Solution 1 (state 146)
+states: 147  rewrites: 4390 in 9ms cpu (9ms real) (456673 rewrites/second)
+C --> < fm : FUTMON | resolved : (fregRecord /\ fcardioAssess /\ fimagingScan
+    /\ finitiateTreatment /\ fbloodTest) > < resourcePool : RESOURCE-POOL |
+    pool : (< r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ;
+    shift("day")), state : available, ResCost : 10 > : < r2 : RESOURCE | id :
+    r2, type : "Junior Nurse", attrs : (years(5) ; shift("day")), state :
+    available, ResCost : 20 > : < r3 : RESOURCE | id : r3, type :
     "Junior Nurse", attrs : (years(5) ; shift("day")), state : available,
-    ResCost : 20 > : < r3 : RESOURCE | id : r3, type : "Junior Nurse", attrs :
-    (years(5) ; shift("day")), state : available, ResCost : 20 > : < r4 :
-    RESOURCE | id : r4, type : "Junior Resident", attrs : (years(5) ; shift(
-    "day")), state : available, ResCost : 12 > : < r5 : RESOURCE | id : r5,
-    type : "Senior Resident", attrs : (years(10) ; shift("day")), state :
-    available, ResCost : 14 > : < r6 : RESOURCE | id : r6, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 > : < r7 : RESOURCE | id : r7, type : "Nurse", attrs : (years(
-    5) ; shift("day")), state : available, ResCost : 30 > : < r8 : RESOURCE |
-    id : r8, type : "Chief of Service", attrs : (years(15) ; shift("day")),
-    state : available, ResCost : 16 > : < r9 : RESOURCE | id : r9, type :
-    "Senior Nurses", attrs : (years(10) ; shift("day")), state : available,
-    ResCost : 24 >), requests : nilReq > < counter : COUNTER | count : 5 > <
-    Hospital : OBJECT | id : HOSPITAL, fields : 25, proc : idle, suspended : {
-    fregRecord ; (fregRecord := fut(1)) ; (fcardioAssess := fut(2)) ; (
-    fimagingScan := fut(3)) ; (finitiateTreatment := fut(4)) | eos} > <
-    CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 102, proc : idle,
-    suspended : emptyPool > < RadiologyUnit : OBJECT | id : RADIOLOGYUNIT,
-    fields : 102, proc : idle, suspended : emptyPool > < fut(1) : Future |
-    value : someInt(1), state : resolved > < fut(2) : Future | value : someInt(
-    11), state : resolved > < fut(3) : Future | value : someInt(111), state :
-    resolved > < fut(4) : Future | value : someInt(1111), state : resolved >
+    ResCost : 20 > : < r4 : RESOURCE | id : r4, type : "Junior Resident", attrs
+    : (years(5) ; shift("day")), state : available, ResCost : 12 > : < r5 :
+    RESOURCE | id : r5, type : "Senior Resident", attrs : (years(10) ; shift(
+    "day")), state : available, ResCost : 14 > : < r6 : RESOURCE | id : r6,
+    type : "Senior Nurses", attrs : (years(10) ; shift("day")), state :
+    available, ResCost : 24 > : < r7 : RESOURCE | id : r7, type : "Nurse",
+    attrs : (years(5) ; shift("day")), state : available, ResCost : 30 > : < r8
+    : RESOURCE | id : r8, type : "Chief of Service", attrs : (years(15) ;
+    shift("day")), state : available, ResCost : 16 > : < r9 : RESOURCE | id :
+    r9, type : "Senior Nurses", attrs : (years(10) ; shift("day")), state :
+    available, ResCost : 24 > : < r10 : RESOURCE | id : r10, type :
+    "LabTechnecian", attrs : (years(5) ; shift("day")), state : available,
+    ResCost : 30 > : < r11 : RESOURCE | id : r11, type : "Inter", attrs : (
+    years(2) ; shift("day")), state : available, ResCost : 30 >) > < counter :
+    COUNTER | count : 7 > < Hospital : OBJECT | id : HOSPITAL, fields : 0, proc
+    : idle, suspended : emptyPool > < CardiologyUnit : OBJECT | id :
+    CARDIOLOGYUNIT, fields : 0, proc : idle, suspended : emptyPool > <
+    RadiologyUnit : OBJECT | id : RADIOLOGYUNIT, fields : 0, proc : idle,
+    suspended : emptyPool > < LaboratoryUnit : OBJECT | id : LABORATORYUNIT,
+    fields : 0, proc : idle, suspended : emptyPool > < Runner : OBJECT | id :
+    RUNNER, fields : 0, proc : {destiny ; (ar :== noneProfile) ; (destiny :==
+    fut(1)) ; (fregRecord := fut(2)) ; (fcardioAssess := fut(3)) ; (
+    fimagingScan := fut(5)) ; (finitiateTreatment := fut(6)) ; (fbloodTest :=
+    fut(4)) | return(1) ; meos}, suspended : {xx := fut(1) | eos} > < fut(1) :
+    Future | value : someInt(0), state : unresolved > < fut(2) : Future | value
+    : someInt(1), state : resolved > < fut(3) : Future | value : someInt(11),
+    state : resolved > < fut(4) : Future | value : someInt(111), state :
+    resolved > < fut(5) : Future | value : someInt(1111), state : resolved > <
+    fut(6) : Future | value : someInt(11111), state : resolved >
 v1 --> 1
 v2 --> 11
-v3 --> 111
-v4 --> 1111
+v3 --> 1111
+v5 --> 11111
+v4 --> 111
+
 
 
 ...
@@ -221,24 +215,38 @@ search in ACTIVE-OBJ-RESOURCE-TEST : init =>!
 ```
 ...
 
-Solution 9 (state 154)
-states: 155  rewrites: 6711 in 8ms cpu (9ms real) (745832 rewrites/second)
+
+Solution 10 (state 143)
+states: 145  rewrites: 4306 in 11ms cpu (11ms real) (371527 rewrites/second)
 C --> < fregRecord : Future | value : someInt(1), state : resolved > <
     fcardioAssess : Future | value : someInt(11), state : resolved > <
-    fimagingScan : Future | value : someInt(111), state : resolved > <
-    finitiateTreatment : Future | value : someInt(1111), state : resolved > <
-    fm : FUTMON | resolved : (fregRecord : fcardioAssess : fimagingScan :
-    finitiateTreatment) > < counter : COUNTER | count : 5 > < Hospital : OBJECT
-    | id : HOSPITAL, fields : 27, proc : idle, suspended : {fregRecord ; (
-    fregRecord := fut(1)) ; (fcardioAssess := fut(2)) ; (fimagingScan := fut(
-    3)) ; (finitiateTreatment := fut(4)) | eos} > < CardiologyUnit : OBJECT |
-    id : CARDIOLOGYUNIT, fields : 102, proc : idle, suspended : emptyPool > <
-    RadiologyUnit : OBJECT | id : RADIOLOGYUNIT, fields : 102, proc : idle,
-    suspended : emptyPool > < fut(1) : Future | value : someInt(1), state :
-    resolved > < fut(2) : Future | value : someInt(11), state : resolved > <
-    fut(3) : Future | value : someInt(111), state : resolved > < fut(4) :
-    Future | value : someInt(1111), state : resolved >
-P --> < r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift(
+    fimagingScan : Future | value : someInt(1111), state : resolved > <
+    finitiateTreatment : Future | value : someInt(1), state : unresolved > <
+    fbloodTest : Future | value : someInt(111), state : resolved > < fm :
+    FUTMON | resolved : (fregRecord /\ fcardioAssess /\ fimagingScan /\
+    fbloodTest) > < counter : COUNTER | count : 6 > < Hospital : OBJECT | id :
+    HOSPITAL, fields : 0, proc : idle, suspended : emptyPool > < CardiologyUnit
+    : OBJECT | id : CARDIOLOGYUNIT, fields : 0, proc : idle, suspended :
+    emptyPool > < RadiologyUnit : OBJECT | id : RADIOLOGYUNIT, fields : 0, proc
+    : idle, suspended : emptyPool > < sigstartTreatmentPlan : SIGNATURE | name
+    : startTreatmentPlan, ret : 11111, params : (x y), depends : ((
+    RADIOLOGYUNIT . imagingScan) ; LABORATORYUNIT . bloodTest), requires : (
+    needs("Intern", 1, years(2) ; shift("day")) or needs("Junior Nurse", 2,
+    years(5) ; shift("day"))) > < bstartTreatmentPlan : METHODBODY | stmt : (
+    suspend3 ; return(11111) ; meos) > < startTreatmentPlan : METHOD | sig :
+    sigstartTreatmentPlan, body : bstartTreatmentPlan > < LaboratoryUnit :
+    OBJECT | id : LABORATORYUNIT, fields : 0, proc : idle, suspended :
+    emptyPool > < Runner : OBJECT | id : RUNNER, fields : 0, proc : idle,
+    suspended : ({xx := fut(1) | eos} ; {destiny ; (ar :== noneProfile) ; (
+    destiny :== fut(1)) ; (fregRecord := fut(2)) ; (fcardioAssess := fut(3)) ;
+    (fimagingScan := fut(5)) ; (fbloodTest := fut(4)) | (finitiateTreatment =
+    Hospital ! startTreatmentPlan(three, four)after fimagingScan /\ fbloodTest)
+    ; return(1) ; meos}) > < fut(1) : Future | value : someInt(0), state :
+    unresolved > < fut(2) : Future | value : someInt(1), state : resolved > <
+    fut(3) : Future | value : someInt(11), state : resolved > < fut(4) : Future
+    | value : someInt(111), state : resolved > < fut(5) : Future | value :
+    someInt(1111), state : resolved >
+_ --> < r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift(
     "day")), state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2,
     type : "Junior Nurse", attrs : (years(5) ; shift("day")), state :
     available, ResCost : 20 > : < r3 : RESOURCE | id : r3, type :
@@ -251,11 +259,58 @@ P --> < r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift(
     ResCost : 30 > : < r8 : RESOURCE | id : r8, type : "Chief of Service",
     attrs : (years(15) ; shift("day")), state : available, ResCost : 16 > : <
     r9 : RESOURCE | id : r9, type : "Senior Nurses", attrs : (years(10) ;
-    shift("day")), state : available, ResCost : 24 >
+    shift("day")), state : available, ResCost : 24 > : < r10 : RESOURCE | id :
+    r10, type : "LabTechnecian", attrs : (years(5) ; shift("day")), state :
+    available, ResCost : 30 > : < r11 : RESOURCE | id : r11, type : "Inter",
+    attrs : (years(2) ; shift("day")), state : available, ResCost : 30 >
+A --> years(5) ; shift("day")
+
+Solution 11 (state 146)
+states: 147  rewrites: 4390 in 11ms cpu (12ms real) (369933 rewrites/second)
+C --> < fregRecord : Future | value : someInt(1), state : resolved > <
+    fcardioAssess : Future | value : someInt(11), state : resolved > <
+    fimagingScan : Future | value : someInt(1111), state : resolved > <
+    finitiateTreatment : Future | value : someInt(11111), state : resolved > <
+    fbloodTest : Future | value : someInt(111), state : resolved > < fm :
+    FUTMON | resolved : (fregRecord /\ fcardioAssess /\ fimagingScan /\
+    finitiateTreatment /\ fbloodTest) > < counter : COUNTER | count : 7 > <
+    Hospital : OBJECT | id : HOSPITAL, fields : 0, proc : idle, suspended :
+    emptyPool > < CardiologyUnit : OBJECT | id : CARDIOLOGYUNIT, fields : 0,
+    proc : idle, suspended : emptyPool > < RadiologyUnit : OBJECT | id :
+    RADIOLOGYUNIT, fields : 0, proc : idle, suspended : emptyPool > <
+    LaboratoryUnit : OBJECT | id : LABORATORYUNIT, fields : 0, proc : idle,
+    suspended : emptyPool > < Runner : OBJECT | id : RUNNER, fields : 0, proc :
+    {destiny ; (ar :== noneProfile) ; (destiny :== fut(1)) ; (fregRecord :=
+    fut(2)) ; (fcardioAssess := fut(3)) ; (fimagingScan := fut(5)) ; (
+    finitiateTreatment := fut(6)) ; (fbloodTest := fut(4)) | return(1) ; meos},
+    suspended : {xx := fut(1) | eos} > < fut(1) : Future | value : someInt(0),
+    state : unresolved > < fut(2) : Future | value : someInt(1), state :
+    resolved > < fut(3) : Future | value : someInt(11), state : resolved > <
+    fut(4) : Future | value : someInt(111), state : resolved > < fut(5) :
+    Future | value : someInt(1111), state : resolved > < fut(6) : Future |
+    value : someInt(11111), state : resolved >
+_ --> < r1 : RESOURCE | id : r1, type : "Intern", attrs : (years(2) ; shift(
+    "day")), state : available, ResCost : 10 > : < r2 : RESOURCE | id : r2,
+    type : "Junior Nurse", attrs : (years(5) ; shift("day")), state :
+    available, ResCost : 20 > : < r3 : RESOURCE | id : r3, type :
+    "Junior Nurse", attrs : (years(5) ; shift("day")), state : available,
+    ResCost : 20 > : < r5 : RESOURCE | id : r5, type : "Senior Resident", attrs
+    : (years(10) ; shift("day")), state : available, ResCost : 14 > : < r6 :
+    RESOURCE | id : r6, type : "Senior Nurses", attrs : (years(10) ; shift(
+    "day")), state : available, ResCost : 24 > : < r7 : RESOURCE | id : r7,
+    type : "Nurse", attrs : (years(5) ; shift("day")), state : available,
+    ResCost : 30 > : < r8 : RESOURCE | id : r8, type : "Chief of Service",
+    attrs : (years(15) ; shift("day")), state : available, ResCost : 16 > : <
+    r9 : RESOURCE | id : r9, type : "Senior Nurses", attrs : (years(10) ;
+    shift("day")), state : available, ResCost : 24 > : < r10 : RESOURCE | id :
+    r10, type : "LabTechnecian", attrs : (years(5) ; shift("day")), state :
+    available, ResCost : 30 > : < r11 : RESOURCE | id : r11, type : "Inter",
+    attrs : (years(2) ; shift("day")), state : available, ResCost : 30 >
+A --> years(5) ; shift("day")
 
 No more solutions.
-states: 155  rewrites: 6711 in 9ms cpu (9ms real) (733522 rewrites/second)
+states: 147  rewrites: 4390 in 11ms cpu (12ms real) (366995 rewrites/second)
 
-```
+Maude> ```
 </details> 
 
